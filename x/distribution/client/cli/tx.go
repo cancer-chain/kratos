@@ -184,16 +184,16 @@ $ %s tx kudistribution set-withdraw withdrawacc  account --from account
 				version.ClientName,
 			),
 		),
-		Args: cobra.ExactArgs(2),
+		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			inBuf := bufio.NewReader(cmd.InOrStdin())
 			txBldr := txutil.NewTxBuilderFromCLI(inBuf).WithTxEncoder(txutil.GetTxEncoder(cdc))
 			cliCtx := txutil.NewKuCLICtxByBuf(cdc, inBuf)
 
 			delAddr := cliCtx.GetFromAddress()
-			delId, _ := chainType.NewAccountIDFromStr(args[1])
+			delId, _ := chainType.NewAccountIDFromStr(args[0])
 
-			withdrawAccId, err := chainType.NewAccountIDFromStr(args[0])
+			withdrawAccId, err := chainType.NewAccountIDFromStr("")
 			if err != nil {
 				fmt.Println(err, err.Error())
 				return err
