@@ -389,6 +389,32 @@ func (app *SimApp) AssetKeeper() *asset.Keeper {
 	return &app.assetKeeper
 }
 
+// SupplyKeeper get account keeper
+func (app *SimApp) SupplyKeeper() *supply.Keeper {
+	return &app.supplyKeeper
+}
+
+func (app *SimApp) SetSupplyKeeper(sup supply.Keeper) {
+	app.supplyKeeper = sup
+}
+
+// MintKeeper get account keeper
+func (app *SimApp) MintKeeper() *mint.Keeper {
+	return &app.mintKeeper
+}
+
+func (app *SimApp) StakeKeeper() *staking.Keeper {
+	return &app.stakingKeeper
+}
+
+func (app *SimApp) SlashKeeper() *slashing.Keeper {
+	return &app.slashingKeeper
+}
+
+func (app *SimApp) GovKeeper() *gov.Keeper {
+	return &app.govKeeper
+}
+
 // GetMaccPerms returns a copy of the module account permissions
 func GetMaccPerms() map[string][]string {
 	dupMaccPerms := make(map[string][]string)

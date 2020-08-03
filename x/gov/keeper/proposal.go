@@ -4,7 +4,6 @@ import (
 	"fmt"
 	chainTypes "github.com/KuChainNetwork/kuchain/chain/types"
 
-	"github.com/KuChainNetwork/kuchain/x/gov/govcodec"
 	"github.com/KuChainNetwork/kuchain/x/gov/types"
 	"github.com/cosmos/cosmos-sdk/client"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -59,10 +58,8 @@ func (keeper Keeper) GetProposal(ctx sdk.Context, proposalID uint64) (types.Prop
 		return types.Proposal{}, false
 	}
 
-	proposal, err := govcodec.UnmarshalProposal(types.ModuleCdc, bz)
-	if err != nil {
-		panic(err)
-	}
+	var proposal types.Proposal
+	keeper.MustUnmarshalProposal(bz, &proposal)
 
 	return proposal, true
 }
@@ -71,7 +68,7 @@ func (keeper Keeper) GetProposal(ctx sdk.Context, proposalID uint64) (types.Prop
 func (keeper Keeper) SetProposal(ctx sdk.Context, proposal types.Proposal) {
 	store := ctx.KVStore(keeper.storeKey)
 
-	bz, err := govcodec.MarshalProposal(types.ModuleCdc, proposal)
+	bz, err := keeper.MarshalProposal(proposal)
 	if err != nil {
 		panic(err)
 	}
@@ -99,10 +96,8 @@ func (keeper Keeper) IterateProposals(ctx sdk.Context, cb func(proposal types.Pr
 	defer iterator.Close()
 
 	for ; iterator.Valid(); iterator.Next() {
-		proposal, err := govcodec.UnmarshalProposal(types.ModuleCdc, iterator.Value())
-		if err != nil {
-			panic(err)
-		}
+		var proposal types.Proposal
+		keeper.MustUnmarshalProposal(iterator.Value(), &proposal)
 
 		if cb(proposal) {
 			break
@@ -192,4 +187,35 @@ func (keeper Keeper) ActivateVotingPeriod(ctx sdk.Context, proposal types.Propos
 
 	keeper.RemoveFromInactiveProposalQueue(ctx, proposal.ProposalID, proposal.DepositEndTime)
 	keeper.InsertActiveProposalQueue(ctx, proposal.ProposalID, proposal.VotingEndTime)
+}
+
+func (keeper Keeper) MarshalProposal(proposal types.Proposal) ([]byte, error) {
+	bz, err := keeper.cdc.MarshalBinaryBare(&proposal)
+	if err != nil {
+		return nil, err
+	}
+	return bz, nil
+}
+
+func (keeper Keeper) UnmarshalProposal(bz []byte, proposal *types.Proposal) error {
+	err := keeper.cdc.UnmarshalBinaryBare(bz, proposal)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (keeper Keeper) MustMarshalProposal(proposal types.Proposal) []byte {
+	bz, err := keeper.MarshalProposal(proposal)
+	if err != nil {
+		panic(err)
+	}
+	return bz
+}
+
+func (keeper Keeper) MustUnmarshalProposal(bz []byte, proposal *types.Proposal) {
+	err := keeper.UnmarshalProposal(bz, proposal)
+	if err != nil {
+		panic(err)
+	}
 }
