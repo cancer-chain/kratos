@@ -195,6 +195,7 @@ $ %s tx kudistribution set-withdraw withdrawacc  account --from account
 
 			withdrawAccId, err := chainType.NewAccountIDFromStr(args[0])
 			if err != nil {
+				fmt.Println(err, err.Error())
 				return err
 			}
 
