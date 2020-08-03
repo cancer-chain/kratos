@@ -43,7 +43,7 @@ var (
 	testAuth   = wallet.NewAccAddress()
 	testIDAddr = types.NewAccountIDFromAccAdd(wallet.NewAccAddress())
 
-	testEvt sdk.Event = sdk.NewEvent("test",
+	testEvt sdk.Event = sdk.NewEvent(ctx, "test",
 		sdk.NewAttribute("name", testName.String()),
 		sdk.NewAttribute("names", "abcde, aa@aaa,kuc.ha@in"),
 		sdk.NewAttribute("id", testIDName.String()),

@@ -3,6 +3,9 @@ package keeper
 import (
 	"bytes"
 	"fmt"
+	chainTypes "github.com/KuChainNetwork/kuchain/chain/types"
+	"github.com/KuChainNetwork/kuchain/plugins"
+	types2 "github.com/KuChainNetwork/kuchain/plugins/types"
 	"sort"
 
 	stakingexport "github.com/KuChainNetwork/kuchain/x/staking/exported"
@@ -38,7 +41,7 @@ func (k Keeper) BlockValidatorUpdates(ctx sdk.Context) []abci.ValidatorUpdate {
 		}
 
 		ctx.EventManager().EmitEvent(
-			sdk.NewEvent(
+			chainTypes.NewEvent(ctx,
 				types.EventTypeCompleteUnbonding,
 				sdk.NewAttribute(sdk.AttributeKeyAmount, balances.String()),
 				sdk.NewAttribute(types.AttributeKeyValidator, dvPair.ValidatorAccount.String()),
@@ -61,7 +64,7 @@ func (k Keeper) BlockValidatorUpdates(ctx sdk.Context) []abci.ValidatorUpdate {
 		}
 
 		ctx.EventManager().EmitEvent(
-			sdk.NewEvent(
+			chainTypes.NewEvent(ctx,
 				types.EventTypeCompleteRedelegation,
 				sdk.NewAttribute(sdk.AttributeKeyAmount, balances.String()),
 				sdk.NewAttribute(types.AttributeKeyDelegator, dvvTriplet.DelegatorAccount.String()),
@@ -106,7 +109,9 @@ func (k Keeper) ApplyAndReturnValidatorSetUpdates(ctx sdk.Context) (updates []ab
 		// part of the bonded validator set
 
 		//valAddr := sdk.ValAddress(iterator.Value())
+
 		valAccount := NewAccountIDFromByte(iterator.Value())
+
 		validator := k.mustGetValidator(ctx, valAccount)
 
 		if validator.Jailed {
@@ -182,6 +187,19 @@ func (k Keeper) ApplyAndReturnValidatorSetUpdates(ctx sdk.Context) (updates []ab
 	if len(updates) > 0 {
 		k.SetLastTotalPower(ctx, totalPower)
 	}
+	iterator = k.ValidatorsPowerStoreIterator(ctx)
+	for count := 0; iterator.Valid() && count < int(maxValidators); iterator.Next() {
+		valAccount := chainTypes.AccountID{Value: iterator.Value()}
+		validator := k.mustGetValidator(ctx, valAccount)
+
+		ctx.EventManager().EmitEvents(sdk.Events{
+			MakeValidatorEvent(ctx, types.EventTypeEditValidator, validator),
+		})
+		count++
+	}
+
+	plugins.HandleEvent(ctx, types2.ReqEvents{BlockHeight: ctx.BlockHeight(), Events: ctx.EventManager().Events()})
+	ctx.Logger().Debug("ApplyAndReturnValidatorSetUpdates", "events", ctx.EventManager().Events())
 
 	return updates
 }

@@ -56,7 +56,7 @@ func (k Keeper) CalculateDelegationRewards(ctx sdk.Context, val types.ValidatorI
 	startingInfo := k.GetDelegatorStartingInfo(ctx, del.GetValidatorAccountID(), del.GetDelegatorAccountID())
 
 	ctx.Logger().Debug("CalculateDelegationRewards",
-		"startingInfo.Height:", startingInfo.Height,
+		"startingInfo.Height:", startingInfo.Height, "height：", ctx.BlockHeader().Height,
 		"ctx.BlockHeight():", ctx.BlockHeight())
 
 	if startingInfo.Height == uint64(ctx.BlockHeight()) {
@@ -78,7 +78,7 @@ func (k Keeper) CalculateDelegationRewards(ctx sdk.Context, val types.ValidatorI
 	// Slashes this block happened after reward allocation, but we have to account
 	// for them for the stake sanity check below.
 	endingHeight := uint64(ctx.BlockHeight())
-	ctx.Logger().Debug("CalculateDelegationRewards", "valid:", del.GetValidatorAccountID())
+	ctx.Logger().Debug("CalculateDelegationRewards", "height：", ctx.BlockHeader().Height, "valid:", del.GetValidatorAccountID())
 
 	if endingHeight > startingHeight {
 		k.IterateValidatorSlashEventsBetween(ctx, del.GetValidatorAccountID(), startingHeight, endingHeight,
@@ -103,7 +103,7 @@ func (k Keeper) CalculateDelegationRewards(ctx sdk.Context, val types.ValidatorI
 	// we had arbitrary-precision rationals.
 
 	currentStake := val.TokensFromShares(del.GetShares())
-	ctx.Logger().Debug("CalculateDelegationRewards", "currentStake", currentStake, "stake", stake)
+	ctx.Logger().Debug("CalculateDelegationRewards", "height：", ctx.BlockHeader().Height, "currentStake", currentStake, "stake", stake)
 	if stake.GT(currentStake) {
 		// Account for rounding inconsistencies between:
 		//
@@ -128,7 +128,7 @@ func (k Keeper) CalculateDelegationRewards(ctx sdk.Context, val types.ValidatorI
 		marginOfErr := sdk.SmallestDec().MulInt64(3)
 		if stake.LTE(currentStake.Add(marginOfErr)) {
 			stake = currentStake
-			ctx.Logger().Debug("CalculateDelegationRewards", "currentStake", currentStake)
+			ctx.Logger().Debug("CalculateDelegationRewards", "height：", ctx.BlockHeader().Height, "currentStake", currentStake)
 		} else {
 			panic(fmt.Sprintf("calculated final stake for delegator %s greater than current stake"+
 				"\n\tfinal stake:\t%s"+
@@ -153,7 +153,7 @@ func (k Keeper) withdrawDelegationRewards(ctx sdk.Context, val types.ValidatorI,
 	rewardsRaw := k.CalculateDelegationRewards(ctx, val, del, endingPeriod)
 	outstanding := k.GetValidatorOutstandingRewardsCoins(ctx, del.GetValidatorAccountID())
 
-	ctx.Logger().Debug("withdrawDelegationRewards", "outstanding", outstanding)
+	ctx.Logger().Debug("withdrawDelegationRewards", "height：", ctx.BlockHeader().Height, "outstanding", outstanding)
 
 	// defensive edge case may happen on the very final digits
 	// of the decCoins due to operation order of the distribution mechanism.
@@ -168,7 +168,7 @@ func (k Keeper) withdrawDelegationRewards(ctx sdk.Context, val types.ValidatorI,
 	// truncate coins, return remainder to community pool
 	coins, remainder := rewards.TruncateDecimal()
 
-	ctx.Logger().Debug("withdrawDelegationRewards", "rewards", rewards, "coins", coins, "remainder", remainder)
+	ctx.Logger().Debug("withdrawDelegationRewards", "height：", ctx.BlockHeader().Height, "rewards", rewards, "coins", coins, "remainder", remainder)
 	// add coins to user account
 	if !coins.IsZero() {
 		withdrawAddr := k.GetDelegatorWithdrawAddr(ctx, del.GetDelegatorAccountID()) //bugs, stacking interface

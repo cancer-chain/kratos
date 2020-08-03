@@ -32,8 +32,6 @@ var (
 	NewDecCoins          = coin.NewDecCoins
 	ParseDecCoins        = coin.ParseDecCoins
 	NewDec               = sdk.NewDec
-	ValidateDenom        = coin.ValidateDenom
-	ErrCoinDenomInvalid  = coin.ErrCoinDenomInvalid
 )
 
 const (

@@ -92,6 +92,7 @@ func (dfd DeductFeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bo
 		}
 
 		err = DeductFees(ctx, dfd.ak, feePayer, feeTx.GetFee())
+
 		if err != nil {
 			return ctx, err
 		}

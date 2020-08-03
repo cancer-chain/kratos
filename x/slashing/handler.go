@@ -38,8 +38,8 @@ func handleMsgUnjail(ctx sdk.Context, msg MsgUnjail, k Keeper) (*sdk.Result, err
 	}
 
 	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(
-			sdk.EventTypeMessage,
+		chainTypes.NewEvent(ctx,
+			types.EventTypeUnjail,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeValueCategory),
 			sdk.NewAttribute(sdk.AttributeKeySender, msg.ValidatorAddr.String()),
 		),

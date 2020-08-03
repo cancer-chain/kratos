@@ -37,3 +37,7 @@ type KuMsgData interface {
 type Prettifier interface {
 	PrettifyJSON(cdc *codec.Codec) ([]byte, error)
 }
+
+type KuMsgDataHandler interface {
+	GetSender(cdc *codec.Codec) (AccountID, error)
+}

@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"fmt"
+	chainTypes "github.com/KuChainNetwork/kuchain/chain/types"
 
 	"github.com/KuChainNetwork/kuchain/x/gov/govcodec"
 	"github.com/KuChainNetwork/kuchain/x/gov/types"
@@ -40,7 +41,7 @@ func (keeper Keeper) SubmitProposal(ctx sdk.Context, content types.Content) (typ
 	keeper.SetProposalID(ctx, proposalID+1)
 
 	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(
+		chainTypes.NewEvent(ctx,
 			types.EventTypeSubmitProposal,
 			sdk.NewAttribute(types.AttributeKeyProposalID, fmt.Sprintf("%d", proposalID)),
 		),

@@ -6,8 +6,6 @@ import (
 	"regexp"
 	"sort"
 	"strings"
-
-	"github.com/pkg/errors"
 )
 
 //-----------------------------------------------------------------------------
@@ -612,7 +610,7 @@ var (
 // invalid.
 func ValidateDenom(denom string) error {
 	if !reDnm.MatchString(denom) {
-		return errors.Wrapf(ErrCoinDenomInvalid, "invalid denom: %s", denom)
+		return fmt.Errorf("invalid denom: %s", denom)
 	}
 	return nil
 }
@@ -641,7 +639,7 @@ func ParseCoin(coinStr string) (coin Coin, err error) {
 	}
 
 	if err := ValidateDenom(denomStr); err != nil {
-		return Coin{}, errors.Wrapf(ErrCoinDenomInvalid, "invalid denom cannot contain upper case characters or spaces")
+		return Coin{}, fmt.Errorf("invalid denom cannot contain upper case characters or spaces: %s", err)
 	}
 
 	return NewCoin(denomStr, amount), nil

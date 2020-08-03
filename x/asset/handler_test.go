@@ -212,7 +212,7 @@ func TestCreateAsset(t *testing.T) {
 			)
 
 			So(createCoinExt(t, app, false, account4, se, maxSupply, true, true, 0, initSupply, desc),
-				simapp.ShouldErrIs, types.ErrCoinDenomInvalid)
+				simapp.ShouldErrIs, assetTypes.ErrAssetDenom)
 		}
 
 		var (
@@ -224,7 +224,7 @@ func TestCreateAsset(t *testing.T) {
 		)
 
 		So(createCoinExt(t, app, false, account1, se, maxSupply, true, true, 0, initSupply, desc),
-			simapp.ShouldErrIs, types.ErrCoinDenomInvalid)
+			simapp.ShouldErrIs, assetTypes.ErrAssetDenom)
 	})
 
 	Convey("test create asset desc too large", t, func() {
@@ -304,7 +304,7 @@ func TestIssueCoins(t *testing.T) {
 
 		ctx := app.NewTestContext()
 		amt := app.AssetKeeper().GetAllBalances(ctx, account4)
-		//amt, _ = amt.SafeSub(simapp.DefaultTestFee) // issue will cost fee
+		amt, _ = amt.SafeSub(simapp.DefaultTestFee) // issue will cost fee
 		So(amt.AmountOf(denom).Int64(), ShouldEqual, 0)
 
 		// issue 10000 to self
@@ -320,7 +320,7 @@ func TestIssueCoins(t *testing.T) {
 		So(issueCoin(t, app, false, account4, symbol, issueAmtOther),
 			simapp.ShouldErrIs, assetTypes.ErrAssetSymbolError)
 
-		//amt, _ = amt.SafeSub(simapp.DefaultTestFee) // issue will cost fee
+		amt, _ = amt.SafeSub(simapp.DefaultTestFee) // issue will cost fee
 
 		// account4 will add issueAmt
 		simapp.CheckBalance(t, app, account4, amt)
@@ -336,7 +336,7 @@ func TestIssueCoins(t *testing.T) {
 
 		ctx := app.NewTestContext()
 		amt := app.AssetKeeper().GetAllBalances(ctx, account3)
-		//amt, _ = amt.SafeSub(simapp.DefaultTestFee) // issue will cost fee
+		amt, _ = amt.SafeSub(simapp.DefaultTestFee) // issue will cost fee
 		So(amt.AmountOf(denom).Int64(), ShouldEqual, 0)
 
 		issueAmt := types.NewInt64Coin(denom, 10000)

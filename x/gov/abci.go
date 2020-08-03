@@ -2,6 +2,7 @@ package gov
 
 import (
 	"fmt"
+	chainTypes "github.com/KuChainNetwork/kuchain/chain/types"
 
 	"github.com/KuChainNetwork/kuchain/x/gov/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -17,7 +18,7 @@ func EndBlocker(ctx sdk.Context, keeper Keeper) {
 		keeper.DeleteDeposits(ctx, proposal.ProposalID)
 
 		ctx.EventManager().EmitEvent(
-			sdk.NewEvent(
+			chainTypes.NewEvent(ctx,
 				types.EventTypeInactiveProposal,
 				sdk.NewAttribute(types.AttributeKeyProposalID, fmt.Sprintf("%d", proposal.ProposalID)),
 				sdk.NewAttribute(types.AttributeKeyProposalResult, types.AttributeValueProposalDropped),
@@ -100,7 +101,7 @@ func EndBlocker(ctx sdk.Context, keeper Keeper) {
 		)
 
 		ctx.EventManager().EmitEvent(
-			sdk.NewEvent(
+			chainTypes.NewEvent(ctx,
 				types.EventTypeActiveProposal,
 				sdk.NewAttribute(types.AttributeKeyProposalID, fmt.Sprintf("%d", proposal.ProposalID)),
 				sdk.NewAttribute(types.AttributeKeyProposalResult, tagValue),

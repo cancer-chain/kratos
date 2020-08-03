@@ -52,7 +52,7 @@ func handleMsgModifyWithdrawAccountId(ctx chainTypes.Context, msg types.MsgSetWi
 		}
 
 		ctx.EventManager().EmitEvent(
-			sdk.NewEvent(
+			chainTypes.NewEvent(ctx.Context(),
 				sdk.EventTypeMessage,
 				sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeValueCategory),
 				sdk.NewAttribute(sdk.AttributeKeySender, dataMsg.DelegatorAccountid.String()),
@@ -78,7 +78,7 @@ func handleMsgWithdrawDelegatorReward(ctx chainTypes.Context, msg types.MsgWithd
 	}
 
 	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(
+		chainTypes.NewEvent(ctx.Context(),
 			sdk.EventTypeMessage,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeValueCategory),
 			sdk.NewAttribute(sdk.AttributeKeySender, dataMsg.DelegatorAccountId.String()),
@@ -98,7 +98,7 @@ func handleMsgWithdrawValidatorCommission(ctx chainTypes.Context, msg types.MsgW
 	}
 
 	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(
+		chainTypes.NewEvent(ctx.Context(),
 			sdk.EventTypeMessage,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeValueCategory),
 			sdk.NewAttribute(sdk.AttributeKeySender, dataMsg.ValidatorAccountId.String()),
@@ -125,7 +125,7 @@ func handleMsgFundCommunityPool(ctx chainTypes.Context, msg types.MsgFundCommuni
 	}
 
 	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(
+		chainTypes.NewEvent(ctx.Context(),
 			sdk.EventTypeMessage,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeValueCategory),
 			sdk.NewAttribute(sdk.AttributeKeySender, msgData.Depositor.String()),

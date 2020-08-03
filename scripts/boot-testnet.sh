@@ -32,10 +32,10 @@ printf "current val key ${VALKEY}\\n"
 ./build/kucd ${PARAMS} genesis add-account testacc1 ${TESTVALKEY}
 ./build/kucd ${PARAMS} genesis add-account testacc2 ${TESTVALKEY}
 ./build/kucd ${PARAMS} genesis add-address ${VALKEY}
-./build/kucd ${PARAMS} genesis add-coin "1000000000000000000000000000000000000000kuchain/sys" "main token"
+./build/kucd ${PARAMS} genesis add-coin "1000000000000000000000000000000000000000kuchain/kcs" "main token"
 #./build/kucd ${PARAMS} genesis add-coin "1000000000000000000000000000000000000000validatortoken" "for staking"
-./build/kucd ${PARAMS} genesis add-account-coin ${VALKEY} "100000000000000000000000kuchain/sys"
-./build/kucd ${PARAMS} genesis add-account-coin kuchain "100000000000000000000000kuchain/sys"
+./build/kucd ${PARAMS} genesis add-account-coin ${VALKEY} "100000000000000000000000kuchain/kcs"
+./build/kucd ${PARAMS} genesis add-account-coin kuchain "100000000000000000000000kuchain/kcs"
 
 printf "./build/kucd ${PARAMS} gentx ${VALKEY} --keyring-backend test --name kuchain --home-client ${ROOT_DIR}/cli/\\n"
 ./build/kucd ${PARAMS} gentx ${VALKEY} --keyring-backend test --name kuchain --home-client ${ROOT_DIR}/cli/

@@ -26,6 +26,7 @@ func BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock, k keeper.Keeper) 
 	k.GetStartNotDistributionTimePoint(ctx)
 
 	f, _ := k.CanDistribution(ctx)
+
 	if ctx.BlockHeight() > 1 && f {
 		previousProposer := k.GetPreviousProposerConsAddr(ctx)
 		k.AllocateTokens(ctx, sumPreviousPrecommitPower, previousTotalPower, previousProposer, req.LastCommitInfo.GetVotes())

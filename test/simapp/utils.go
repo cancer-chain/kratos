@@ -3,13 +3,11 @@ package simapp
 import (
 	"encoding/json"
 	"fmt"
-	. "github.com/smartystreets/goconvey/convey"
+	"io/ioutil"
+
 	tmkv "github.com/tendermint/tendermint/libs/kv"
 	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
-	"io/ioutil"
-	"os"
-	"testing"
 
 	"github.com/KuChainNetwork/kuchain/test/simulation"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -128,13 +126,4 @@ func GetSimulationLog(storeName string, sdr sdk.StoreDecoderRegistry, cdc *codec
 	}
 
 	return
-}
-
-// NewTestCaseDir creates a new temporary directory for a test case.
-// Returns the directory path and a cleanup function.
-// nolint: errcheck
-func NewTestCaseDir(t *testing.T) (string, func()) {
-	dir, err := ioutil.TempDir("", t.Name()+"_")
-	So(err, ShouldBeNil)
-	return dir, func() { os.RemoveAll(dir) }
 }

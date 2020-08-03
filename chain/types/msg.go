@@ -81,23 +81,15 @@ func (msg KuMsg) ValidateBasic() error {
 	if msg.Router.Empty() {
 		return ErrKuMsgMissingRouter
 	}
-
 	if len(msg.Data) > 0 && msg.Action.Empty() {
 		return ErrKuMsgMissingType
 	}
-
 	if len(msg.GetSigners()) == 0 {
 		return ErrKuMsgMissingAuth
 	}
-
 	if len(msg.Data) > KuMsgMaxDataLen {
 		return ErrKuMsgDataTooLarge
 	}
-
-	if msg.Amount.IsAnyNegative() {
-		return ErrTransfNoEnough
-	}
-
 	return nil
 }
 
@@ -142,4 +134,17 @@ func (msg KuMsg) PrettifyJSON(cdc *codec.Codec) ([]byte, error) {
 	}
 
 	return cdc.MarshalJSON(alias)
+}
+
+func (msg KuMsg) GetSender(cdc *codec.Codec) (AccountID, error) {
+	if len(msg.Data) > 0 {
+		var msgData KuMsgData = nil
+		if err := cdc.UnmarshalBinaryLengthPrefixed(msg.Data, &msgData); err != nil {
+			return AccountID{}, errors.Wrapf(err, "unmarshal msg data")
+		}
+
+		return msgData.Sender(), nil
+	}
+
+	return AccountID{}, nil
 }

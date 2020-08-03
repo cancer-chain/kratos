@@ -2,6 +2,9 @@ package keeper
 
 import (
 	"fmt"
+	chainTypes "github.com/KuChainNetwork/kuchain/chain/types"
+	"github.com/KuChainNetwork/kuchain/plugins"
+	types2 "github.com/KuChainNetwork/kuchain/plugins/types"
 
 	stakingTypes "github.com/KuChainNetwork/kuchain/x/staking/types"
 	"github.com/KuChainNetwork/kuchain/x/supply/types"
@@ -24,6 +27,16 @@ func (k Keeper) SendCoinsFromModuleToAccount(
 		return sdkerrors.Wrapf(err,
 			"SendCoinsFromModuleToAccount %s to %s by %s", senderAcc.String(), recipient.String(), amt.String())
 	}
+
+	ctx.EventManager().EmitEvent(
+		chainTypes.NewEvent(ctx,
+			types.EventTypeSendCoinsFromModuleToAccount,
+			sdk.NewAttribute(sdk.AttributeKeyAmount, amt.String()),
+			sdk.NewAttribute(types.AttributeKeyFrom, senderModule),
+			sdk.NewAttribute(types.AttributeKeyTo, recipient.String()),
+		),
+	)
+	plugins.HandleEvent(ctx, types2.ReqEvents{BlockHeight: ctx.BlockHeight(), Events: ctx.EventManager().Events()})
 
 	return nil
 }
@@ -48,7 +61,16 @@ func (k Keeper) SendCoinsFromModuleToModule(
 		return sdkerrors.Wrapf(err,
 			"SendCoinsFromModuleToModule %s to %s by %s", senderAcc.String(), recipientAcc.String(), amt.String())
 	}
+	ctx.EventManager().EmitEvent(
+		chainTypes.NewEvent(ctx,
+			types.EventTypeSendCoinsFromModuleToModule,
+			sdk.NewAttribute(sdk.AttributeKeyAmount, amt.String()),
+			sdk.NewAttribute(types.AttributeKeyFrom, senderModule),
+			sdk.NewAttribute(types.AttributeKeyTo, recipientModule),
+		),
+	)
 
+	plugins.HandleEvent(ctx, types2.ReqEvents{BlockHeight: ctx.BlockHeight(), Events: ctx.EventManager().Events()})
 	return nil
 }
 
@@ -68,6 +90,15 @@ func (k Keeper) SendCoinsFromAccountToModule(
 		return sdkerrors.Wrapf(err,
 			"SendCoinsFromAccountToModule %s to %s by %s", sender.String(), recipientModule, amt.String())
 	}
+	ctx.EventManager().EmitEvent(
+		chainTypes.NewEvent(ctx,
+			types.EventTypeSendCoinsFromAccountToModule,
+			sdk.NewAttribute(types.AttributeKeyAmount, amt.String()),
+			sdk.NewAttribute(types.AttributeKeyFrom, sender.String()),
+			sdk.NewAttribute(types.AttributeKeyTo, recipientModule),
+		),
+	)
+	plugins.HandleEvent(ctx, types2.ReqEvents{BlockHeight: ctx.BlockHeight(), Events: ctx.EventManager().Events()})
 
 	return nil
 }
@@ -87,11 +118,21 @@ func (k Keeper) DelegateCoinsFromAccountToModule(
 		panic(sdkerrors.Wrapf(sdkerrors.ErrUnauthorized, "module account %s does not have permissions to receive delegated coins", recipientModule))
 	}
 
-	// Delegate will first send coins to ModuleAccountID
 	if err := k.bk.CoinsToPower(ctx, stakingTypes.ModuleAccountID, recipientAcc.GetID(), amt); err != nil {
 		return sdkerrors.Wrapf(err,
 			"DelegateCoinsFromAccountToModule %s by %s", recipientModule, amt.String())
 	}
+
+	ctx.EventManager().EmitEvent(
+		chainTypes.NewEvent(ctx,
+			types.EventTypeDelegateCoinsFromAccountToModule,
+			sdk.NewAttribute(types.AttributeKeyAmount, amt.String()),
+			sdk.NewAttribute(types.AttributeKeyFrom, stakingTypes.ModuleAccountID.String()),
+			sdk.NewAttribute(types.AttributeKeyTo, recipientModule),
+		),
+	)
+
+	plugins.HandleEvent(ctx, types2.ReqEvents{BlockHeight: ctx.BlockHeight(), Events: ctx.EventManager().Events()})
 
 	return nil
 }
@@ -118,6 +159,15 @@ func (k Keeper) UndelegateCoinsFromModuleToAccount(
 			"UndelegateCoinsFromModuleToAccount %s by %s", recipientAcc, amt.String())
 	}
 
+	ctx.EventManager().EmitEvent(
+		chainTypes.NewEvent(ctx,
+			types.EventTypeUndelegateCoinsFromModuleToAccount,
+			sdk.NewAttribute(types.AttributeKeyAmount, amt.String()),
+			sdk.NewAttribute(types.AttributeKeyFrom, senderModule),
+			sdk.NewAttribute(types.AttributeKeyTo, recipientAcc.String()),
+		),
+	)
+	plugins.HandleEvent(ctx, types2.ReqEvents{BlockHeight: ctx.BlockHeight(), Events: ctx.EventManager().Events()})
 	return nil
 }
 
@@ -139,6 +189,17 @@ func (k Keeper) MintCoins(ctx sdk.Context, moduleName string, amt *Coins) error 
 	}
 
 	k.Logger(ctx).Info(fmt.Sprintf("minted %s from %s module account", amt.String(), moduleName))
+
+	ctx.EventManager().EmitEvent(
+		chainTypes.NewEvent(ctx,
+			types.EventTypeModuleMintCoins,
+			sdk.NewAttribute(types.AttributeKeyAmount, amt.String()),
+			sdk.NewAttribute(types.AttributeKeyTo, moduleName),
+		),
+	)
+
+	ctx.Logger().Debug("MintCoins", "event:", amt.String(), "name:", moduleName, "height:", ctx.BlockHeight())
+	plugins.HandleEvent(ctx, types2.ReqEvents{BlockHeight: ctx.BlockHeight(), Events: ctx.EventManager().Events()})
 
 	return nil
 }

@@ -1,6 +1,7 @@
 package staking
 
 import (
+	"strconv"
 	"time"
 
 	"github.com/KuChainNetwork/kuchain/chain/msg"
@@ -139,11 +140,8 @@ func handleMsgCreateValidator(ctx sdk.Context, msg types.MsgCreateValidator, k k
 	k.AfterValidatorCreated(ctx, validator.OperatorAccount)
 
 	ctx.EventManager().EmitEvents(sdk.Events{
-		sdk.NewEvent(
-			types.EventTypeCreateValidator,
-			sdk.NewAttribute(types.AttributeKeyValidator, msg.ValidatorAccount.String()),
-		),
-		sdk.NewEvent(
+		keeper.MakeValidatorEvent(ctx, types.EventTypeCreateValidator, validator),
+		chainTypes.NewEvent(ctx,
 			sdk.EventTypeMessage,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeValueCategory),
 			sdk.NewAttribute(sdk.AttributeKeySender, msg.DelegatorAccount.String()),
@@ -182,12 +180,8 @@ func handleMsgEditValidator(ctx sdk.Context, msg types.MsgEditValidator, k keepe
 	k.SetValidator(ctx, validator)
 
 	ctx.EventManager().EmitEvents(sdk.Events{
-		sdk.NewEvent(
-			types.EventTypeEditValidator,
-			sdk.NewAttribute(types.AttributeKeyCommissionRate, validator.Commission.String()),
-			sdk.NewAttribute(types.AttributeKeyMinSelfDelegation, validator.MinSelfDelegation.String()),
-		),
-		sdk.NewEvent(
+		keeper.MakeValidatorEvent(ctx, types.EventTypeEditValidator, validator),
+		chainTypes.NewEvent(ctx,
 			sdk.EventTypeMessage,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeValueCategory),
 			sdk.NewAttribute(sdk.AttributeKeySender, msg.ValidatorAccount.String()),
@@ -218,16 +212,23 @@ func handleMsgDelegate(ctx chainTypes.Context, msg types.MsgDelegate, k keeper.K
 	}
 
 	ctx.EventManager().EmitEvents(sdk.Events{
-		sdk.NewEvent(
+		chainTypes.NewEvent(ctx.Context(),
 			types.EventTypeDelegate,
 			sdk.NewAttribute(types.AttributeKeyValidator, msg.ValidatorAccount.String()),
-			sdk.NewAttribute(sdk.AttributeKeyAmount, msg.Amount.Amount.String()),
+			sdk.NewAttribute(types.AttributeKeyDelegator, msg.DelegatorAccount.String()),
+			sdk.NewAttribute(sdk.AttributeKeyAmount, msg.Amount.String()),
+			sdk.NewAttribute(types.AttributeKeyHeight, strconv.FormatInt(ctx.BlockHeight(), 10)),
 		),
-		sdk.NewEvent(
+		chainTypes.NewEvent(ctx.Context(),
 			sdk.EventTypeMessage,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeValueCategory),
 			sdk.NewAttribute(sdk.AttributeKeySender, msg.DelegatorAccount.String()),
 		),
+	})
+
+	validator, _ = k.GetValidator(ctx.Context(), msg.ValidatorAccount)
+	ctx.EventManager().EmitEvents(sdk.Events{
+		keeper.MakeValidatorEvent(ctx.Context(), types.EventTypeEditValidator, validator),
 	})
 	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }
@@ -255,20 +256,27 @@ func handleMsgUndelegate(ctx sdk.Context, msg types.MsgUndelegate, k keeper.Keep
 	}
 
 	completionTimeBz := types.ModuleCdc.MustMarshalBinaryLengthPrefixed(ts)
+
 	ctx.EventManager().EmitEvents(sdk.Events{
-		sdk.NewEvent(
+		chainTypes.NewEvent(ctx,
 			types.EventTypeUnbond,
 			sdk.NewAttribute(types.AttributeKeyValidator, msg.ValidatorAccount.String()),
-			sdk.NewAttribute(sdk.AttributeKeyAmount, msg.Amount.Amount.String()),
+			sdk.NewAttribute(types.AttributeKeyDelegator, msg.DelegatorAccount.String()),
+			sdk.NewAttribute(sdk.AttributeKeyAmount, msg.Amount.String()),
 			sdk.NewAttribute(types.AttributeKeyCompletionTime, completionTime.Format(time.RFC3339)),
+			sdk.NewAttribute(types.AttributeKeyHeight, strconv.FormatInt(ctx.BlockHeight(), 10)),
 		),
-		sdk.NewEvent(
+		chainTypes.NewEvent(ctx,
 			sdk.EventTypeMessage,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeValueCategory),
 			sdk.NewAttribute(sdk.AttributeKeySender, msg.DelegatorAccount.String()),
 		),
 	})
 
+	validator, _ := k.GetValidator(ctx, msg.ValidatorAccount)
+	ctx.EventManager().EmitEvents(sdk.Events{
+		keeper.MakeValidatorEvent(ctx, types.EventTypeEditValidator, validator),
+	})
 	return &sdk.Result{Data: completionTimeBz, Events: ctx.EventManager().Events()}, nil
 }
 
@@ -298,18 +306,24 @@ func handleMsgBeginRedelegate(ctx sdk.Context, msg types.MsgBeginRedelegate, k k
 
 	completionTimeBz := types.ModuleCdc.MustMarshalBinaryLengthPrefixed(ts)
 	ctx.EventManager().EmitEvents(sdk.Events{
-		sdk.NewEvent(
+		chainTypes.NewEvent(ctx,
 			types.EventTypeRedelegate,
 			sdk.NewAttribute(types.AttributeKeySrcValidator, msg.ValidatorSrcAccount.String()),
 			sdk.NewAttribute(types.AttributeKeyDstValidator, msg.ValidatorDstAccount.String()),
-			sdk.NewAttribute(sdk.AttributeKeyAmount, msg.Amount.Amount.String()),
+			sdk.NewAttribute(sdk.AttributeKeyAmount, msg.Amount.String()),
 			sdk.NewAttribute(types.AttributeKeyCompletionTime, completionTime.Format(time.RFC3339)),
+			sdk.NewAttribute(types.AttributeKeyHeight, strconv.FormatInt(ctx.BlockHeight(), 10)),
 		),
-		sdk.NewEvent(
+		chainTypes.NewEvent(ctx,
 			sdk.EventTypeMessage,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeValueCategory),
 			sdk.NewAttribute(sdk.AttributeKeySender, msg.DelegatorAccount.String()),
 		),
+	})
+
+	validator, _ := k.GetValidator(ctx, msg.ValidatorSrcAccount)
+	ctx.EventManager().EmitEvents(sdk.Events{
+		keeper.MakeValidatorEvent(ctx, types.EventTypeEditValidator, validator),
 	})
 
 	return &sdk.Result{Data: completionTimeBz, Events: ctx.EventManager().Events()}, nil

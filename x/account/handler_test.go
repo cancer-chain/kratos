@@ -371,30 +371,3 @@ func TestAuthForTwoAccount(t *testing.T) {
 		checkAuthSequenceByQuery(app, ctx, addr1, 3, 1) // addr1 create a account so it will be 3
 	})
 }
-
-func TestCreateAccountMsg(t *testing.T) {
-	Convey("test create account msg", t, func() {
-		genAccs := simapp.NewGenesisAccounts(wallet.GetRootAuth())
-		app := simapp.SetupWithGenesisAccounts(genAccs)
-
-		ctx := app.NewTestContext()
-		auth := wallet.GetRootAuth()
-
-		msg := accountTypes.NewMsgCreateAccount(
-			auth,
-			types.EmptyAccountID(),
-			name1,
-			addr1)
-
-		So(msg.ValidateBasic(), simapp.ShouldErrIs, types.ErrKuMsgAccountIDNil)
-
-		tx := simapp.NewTxForTest(
-			constants.SystemAccountID,
-			[]sdk.Msg{
-				&msg,
-			}, wallet.PrivKey(auth)).WithCannotPass()
-
-		err := simapp.CheckTxs(t, app, ctx, tx)
-		So(err, simapp.ShouldErrIs, types.ErrKuMsgAccountIDNil)
-	})
-}

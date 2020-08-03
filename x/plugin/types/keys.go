@@ -5,6 +5,8 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/tendermint/tendermint/libs/log"
+
+	"github.com/tendermint/tendermint/node"
 )
 
 const (
@@ -28,3 +30,5 @@ var (
 func Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", loggerName)
 }
+
+var PNode *node.Node

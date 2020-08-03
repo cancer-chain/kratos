@@ -17,8 +17,10 @@ func (k Keeper) GetNotBondedPool(ctx sdk.Context) (notBondedPool exported.Module
 }
 
 // bondedTokensToNotBonded transfers coins from the bonded to the not bonded pool within staking
+
 func (k Keeper) bondedTokensToNotBonded(ctx sdk.Context, tokens sdk.Int) {
 	coins := types.NewCoins(types.NewCoin(k.BondDenom(ctx), tokens))
+
 	err := k.supplyKeeper.SendCoinsFromModuleToModule(ctx, types.BondedPoolName, types.NotBondedPoolName, coins)
 	if err != nil {
 		panic(err)
@@ -26,6 +28,7 @@ func (k Keeper) bondedTokensToNotBonded(ctx sdk.Context, tokens sdk.Int) {
 }
 
 // notBondedTokensToBonded transfers coins from the not bonded to the bonded pool within staking
+
 func (k Keeper) notBondedTokensToBonded(ctx sdk.Context, tokens sdk.Int) {
 	coins := types.NewCoins(types.NewCoin(k.BondDenom(ctx), tokens))
 	err := k.supplyKeeper.SendCoinsFromModuleToModule(ctx, types.NotBondedPoolName, types.BondedPoolName, coins)

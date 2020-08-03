@@ -24,6 +24,14 @@ func (msg MsgCreateAccountData) Sender() AccountID {
 	return msg.Creator
 }
 
+func (m MsgCreateAccountData) Marshal() ([]byte, error) {
+	return ModuleCdc.MarshalJSON(m)
+}
+
+func (m *MsgCreateAccountData) Unmarshal(b []byte) error {
+	return ModuleCdc.UnmarshalJSON(b, m)
+}
+
 // MsgCreateAccount create account msg
 type MsgCreateAccount struct {
 	types.KuMsg
@@ -50,27 +58,6 @@ func (msg MsgCreateAccount) GetData() (MsgCreateAccountData, error) {
 		return MsgCreateAccountData{}, sdkerrors.Wrapf(types.ErrKuMsgDataUnmarshal, "%s", err.Error())
 	}
 	return res, nil
-}
-
-func (msg MsgCreateAccount) ValidateBasic() error {
-	if err := msg.KuMsg.ValidateBasic(); err != nil {
-		return err
-	}
-
-	data, err := msg.GetData()
-	if err != nil {
-		return err
-	}
-
-	if data.Creator.Empty() {
-		return types.ErrKuMsgAccountIDNil
-	}
-
-	if data.Name.Empty() {
-		return types.ErrNameNilString
-	}
-
-	return nil
 }
 
 // MsgUpdateAccountAuthData the data struct of MsgCreateAccount
@@ -102,29 +89,4 @@ func NewMsgUpdateAccountAuth(auth types.AccAddress, name types.Name, accountAuth
 			}),
 		),
 	}
-}
-
-func (msg MsgUpdateAccountAuth) GetData() (MsgUpdateAccountAuthData, error) {
-	res := MsgUpdateAccountAuthData{}
-	if err := msg.UnmarshalData(Cdc(), &res); err != nil {
-		return MsgUpdateAccountAuthData{}, sdkerrors.Wrapf(types.ErrKuMsgDataUnmarshal, "%s", err.Error())
-	}
-	return res, nil
-}
-
-func (msg MsgUpdateAccountAuth) ValidateBasic() error {
-	if err := msg.KuMsg.ValidateBasic(); err != nil {
-		return err
-	}
-
-	data, err := msg.GetData()
-	if err != nil {
-		return err
-	}
-
-	if data.Name.Empty() {
-		return types.ErrNameNilString
-	}
-
-	return nil
 }

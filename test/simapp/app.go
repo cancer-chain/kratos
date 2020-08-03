@@ -238,7 +238,7 @@ func NewSimApp(
 		mint.NewAppModule(app.mintKeeper, app.supplyKeeper),
 		evidence.NewAppModule(app.evidenceKeeper, app.accountKeeper, app.assetKeeper),
 		gov.NewAppModule(app.govKeeper, app.accountKeeper, app.assetKeeper, app.supplyKeeper),
-		plugin.NewAppModule(),
+		plugin.NewAppModule(app.stakingKeeper, cdc),
 	)
 
 	// plugin.ModuleName MUST be the last
@@ -387,20 +387,6 @@ func (app *SimApp) AccountKeeper() *account.Keeper {
 // AccountKeeper get account keeper
 func (app *SimApp) AssetKeeper() *asset.Keeper {
 	return &app.assetKeeper
-}
-
-// SupplyKeeper get account keeper
-func (app *SimApp) SupplyKeeper() *supply.Keeper {
-	return &app.supplyKeeper
-}
-
-func (app *SimApp) SetSupplyKeeper(sup supply.Keeper) {
-	app.supplyKeeper = sup
-}
-
-// MintKeeper get account keeper
-func (app *SimApp) MintKeeper() *mint.Keeper {
-	return &app.mintKeeper
 }
 
 // GetMaccPerms returns a copy of the module account permissions

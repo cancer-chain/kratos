@@ -3,6 +3,8 @@ package msg
 import (
 	"github.com/KuChainNetwork/kuchain/chain/types"
 	"github.com/KuChainNetwork/kuchain/plugins"
+	types2 "github.com/KuChainNetwork/kuchain/plugins/types"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
@@ -36,7 +38,7 @@ func WarpHandler(transfer AssetTransfer, auther AccountAuther, h Handler) sdk.Ha
 			return nil, err
 		}
 
-		plugins.HandleEvent(ctx, res.Events)
+		plugins.HandleEvent(ctx, types2.ReqEvents{BlockHeight: ctx.BlockHeight(), Events: res.Events})
 
 		return res, err
 	}
@@ -59,7 +61,7 @@ func onHandlerKuMsg(ctx Context, k AssetTransfer, msg KuTransfMsg) error {
 	}
 
 	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(
+		types.NewEvent(ctx.Context(),
 			EventTypeTransfer,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.KuCodeSpace),
 			sdk.NewAttribute(AttributeKeyFrom, from.String()),

@@ -8,6 +8,7 @@ import (
 	"github.com/KuChainNetwork/kuchain/x/account"
 	"github.com/KuChainNetwork/kuchain/x/distribution/types"
 	params "github.com/KuChainNetwork/kuchain/x/params/types"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -67,6 +68,7 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 }
 
 // SetWithdrawAddr sets a new address that will receive the rewards upon withdrawal
+
 func (k Keeper) SetWithdrawAddr(ctx sdk.Context, delegatorId chainTypes.AccountID, withdrawId chainTypes.AccountID) error {
 	if k.blacklistedAddrs[withdrawId.String()] {
 		return sdkerrors.Wrapf(sdkerrors.ErrUnauthorized, "%s is blacklisted from receiving external funds", withdrawId)
@@ -77,7 +79,7 @@ func (k Keeper) SetWithdrawAddr(ctx sdk.Context, delegatorId chainTypes.AccountI
 	}
 
 	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(
+		chainTypes.NewEvent(ctx,
 			types.EventTypeSetWithdrawAddress,
 			sdk.NewAttribute(types.AttributeKeyWithdrawAddress, withdrawId.String()),
 		),
@@ -88,6 +90,7 @@ func (k Keeper) SetWithdrawAddr(ctx sdk.Context, delegatorId chainTypes.AccountI
 }
 
 // withdraw rewards from a delegation
+
 func (k Keeper) WithdrawDelegationRewards(ctx sdk.Context, delAddr chainTypes.AccountID, valAddr chainTypes.AccountID) (Coins, error) {
 
 	val := k.stakingKeeper.Validator(ctx, valAddr)
@@ -111,10 +114,11 @@ func (k Keeper) WithdrawDelegationRewards(ctx sdk.Context, delAddr chainTypes.Ac
 	ctx.Logger().Debug("WithdrawDelegationRewards", "rewards:", rewards)
 
 	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(
+		chainTypes.NewEvent(ctx,
 			types.EventTypeWithdrawRewards,
 			sdk.NewAttribute(sdk.AttributeKeyAmount, rewards.String()),
 			sdk.NewAttribute(types.AttributeKeyValidator, valAddr.String()),
+			sdk.NewAttribute(types.AttributeKeyDelegator, delAddr.String()),
 		),
 	)
 
@@ -125,6 +129,7 @@ func (k Keeper) WithdrawDelegationRewards(ctx sdk.Context, delAddr chainTypes.Ac
 
 // withdraw validator commission
 func (k Keeper) WithdrawValidatorCommission(ctx sdk.Context, valAddr chainTypes.AccountID) (Coins, error) {
+
 	// fetch validator accumulated commission
 	accumCommission := k.GetValidatorAccumulatedCommission(ctx, valAddr)
 	if accumCommission.Commission.IsZero() {
@@ -149,9 +154,10 @@ func (k Keeper) WithdrawValidatorCommission(ctx sdk.Context, valAddr chainTypes.
 	}
 
 	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(
+		chainTypes.NewEvent(ctx,
 			types.EventTypeWithdrawCommission,
 			sdk.NewAttribute(sdk.AttributeKeyAmount, commission.String()),
+			sdk.NewAttribute(types.AttributeKeyValidator, valAddr.String()),
 		),
 	)
 
@@ -174,6 +180,7 @@ func (k Keeper) GetTotalRewards(ctx sdk.Context) (totalRewards chainTypes.DecCoi
 // The amount is first added to the distribution module account and then directly
 // added to the pool. An error is returned if the amount cannot be sent to the
 // module account.
+
 func (k Keeper) FundCommunityPool(ctx sdk.Context, amount Coins, sender chainTypes.AccountID) error {
 	ctx.Logger().Debug("FundCommunityPool", "amount", amount, "sender", sender)
 
@@ -197,8 +204,7 @@ func (k Keeper) SetStartNotDistributionTimePoint(ctx sdk.Context, t time.Time) {
 	bz := k.cdc.MustMarshalJSON(k.startNotDistriTimePoint)
 
 	store.Set([]byte(key), bz)
-	ctx.Logger().Debug("SetStartNotDistributionTimePoint",
-		"time", k.startNotDistriTimePoint.Nanosecond())
+	ctx.Logger().Debug("SetStartNotDistributionTimePoint", "time", k.startNotDistriTimePoint.Nanosecond())
 }
 
 func (k Keeper) GetStartNotDistributionTimePoint(ctx sdk.Context) {
@@ -221,8 +227,7 @@ func (k Keeper) CanDistribution(ctx sdk.Context) (bool, time.Time) {
 		return false, k.startNotDistriTimePoint
 	} else {
 		k.SetStartNotDistributionTimePoint(ctx, time.Time{})
-		ctx.Logger().Info("time CanDistribution",
-			"time", k.startNotDistriTimePoint.Nanosecond())
+		ctx.Logger().Info("time CanDistribution", "time", k.startNotDistriTimePoint.Nanosecond())
 	}
 
 	return true, k.startNotDistriTimePoint

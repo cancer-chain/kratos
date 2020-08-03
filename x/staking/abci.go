@@ -15,5 +15,6 @@ func BeginBlocker(ctx sdk.Context, k keeper.Keeper) {
 
 // Called every block, update validator set
 func EndBlocker(ctx sdk.Context, k keeper.Keeper) []abci.ValidatorUpdate {
+
 	return k.BlockValidatorUpdates(ctx)
 }

@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"fmt"
+	chainTypes "github.com/KuChainNetwork/kuchain/chain/types"
 
 	"github.com/KuChainNetwork/kuchain/x/slashing/types"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -68,7 +69,7 @@ func (k Keeper) GetPubkey(ctx sdk.Context, address crypto.Address) (crypto.PubKe
 // module to make the necessary validator changes.
 func (k Keeper) Slash(ctx sdk.Context, consAcc sdk.ConsAddress, fraction sdk.Dec, power, distributionHeight int64) {
 	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(
+		chainTypes.NewEvent(ctx,
 			types.EventTypeSlash,
 			sdk.NewAttribute(types.AttributeKeyAddress, consAcc.String()),
 			sdk.NewAttribute(types.AttributeKeyPower, fmt.Sprintf("%d", power)),
@@ -83,7 +84,7 @@ func (k Keeper) Slash(ctx sdk.Context, consAcc sdk.ConsAddress, fraction sdk.Dec
 // to make the necessary validator changes.
 func (k Keeper) Jail(ctx sdk.Context, consAcc sdk.ConsAddress) {
 	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(
+		chainTypes.NewEvent(ctx,
 			types.EventTypeSlash,
 			sdk.NewAttribute(types.AttributeKeyJailed, consAcc.String()),
 		),

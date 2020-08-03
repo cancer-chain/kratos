@@ -1,7 +1,7 @@
 package keys
 
 const (
-	ChainNameStr      = "sys"
+	ChainNameStr      = "kcs"
 	ChainMainNameStr  = "kuchain"
 	DefaultBondSymbol = ChainNameStr
 	DefaultBondDenom  = ChainMainNameStr + "/" + DefaultBondSymbol

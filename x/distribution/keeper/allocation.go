@@ -5,6 +5,7 @@ import (
 
 	chainTypes "github.com/KuChainNetwork/kuchain/chain/types"
 	"github.com/KuChainNetwork/kuchain/x/distribution/types"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 )
@@ -48,7 +49,8 @@ func (k Keeper) AllocateTokens(
 	proposerMultiplier := baseProposerReward.Add(bonusProposerReward.MulTruncate(previousFractionVotes))
 	proposerReward := feesCollected.MulDecTruncate(proposerMultiplier)
 
-	ctx.Logger().Debug("AllocateTokens", "proposerReward", proposerReward)
+	ctx.Logger().Debug("AllocateTokens", "height：", ctx.BlockHeader().Height, "feesCollected", feesCollected)
+	ctx.Logger().Debug("AllocateTokens", "height：", ctx.BlockHeader().Height, "proposerReward", proposerReward)
 
 	// pay previous proposer
 	remaining := feesCollected
@@ -56,7 +58,7 @@ func (k Keeper) AllocateTokens(
 
 	if proposerValidator != nil {
 		ctx.EventManager().EmitEvent(
-			sdk.NewEvent(
+			chainTypes.NewEvent(ctx,
 				types.EventTypeProposerReward,
 				sdk.NewAttribute(sdk.AttributeKeyAmount, proposerReward.String()),
 				sdk.NewAttribute(types.AttributeKeyValidator, proposerValidator.GetOperator().String()),
@@ -64,7 +66,7 @@ func (k Keeper) AllocateTokens(
 		)
 
 		k.AllocateTokensToValidator(ctx, proposerValidator, proposerReward)
-		ctx.Logger().Debug("AllocateTokens", "proposerValidator", proposerValidator)
+		ctx.Logger().Debug("AllocateTokens", "height：", ctx.BlockHeader().Height, "proposerValidator", proposerValidator)
 		remaining = remaining.Sub(proposerReward)
 	} else {
 		// previous proposer can be unknown if say, the unbonding period is 1 block, so
@@ -97,7 +99,7 @@ func (k Keeper) AllocateTokens(
 	}
 
 	// allocate community funding
-	ctx.Logger().Debug("AllocateTokens", "remaining", remaining)
+	ctx.Logger().Debug("AllocateTokens", "height：", ctx.BlockHeader().Height, "remaining", remaining)
 	feePool.CommunityPool = feePool.CommunityPool.Add(remaining...)
 	k.SetFeePool(ctx, feePool)
 }
@@ -110,7 +112,7 @@ func (k Keeper) AllocateTokensToValidator(ctx sdk.Context, val types.StakingExpo
 
 	// update current commission
 	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(
+		chainTypes.NewEvent(ctx,
 			types.EventTypeCommission,
 			sdk.NewAttribute(sdk.AttributeKeyAmount, commission.String()),
 			sdk.NewAttribute(types.AttributeKeyValidator, val.GetOperator().String()),
@@ -119,9 +121,8 @@ func (k Keeper) AllocateTokensToValidator(ctx sdk.Context, val types.StakingExpo
 	currentCommission := k.GetValidatorAccumulatedCommission(ctx, val.GetOperatorAccountID())
 	currentCommission.Commission = currentCommission.Commission.Add(commission...)
 	k.SetValidatorAccumulatedCommission(ctx, val.GetOperatorAccountID(), currentCommission)
-	ctx.Logger().Debug("AllocateTokensToValidator",
-		"operator", val.GetOperatorAccountID(),
-		"currentCommission", currentCommission)
+	ctx.Logger().Debug("AllocateTokensToValidator", "height：", ctx.BlockHeader().Height,
+		"operator", val.GetOperatorAccountID(), "currentCommission", currentCommission)
 
 	// update current rewards
 	currentRewards := k.GetValidatorCurrentRewards(ctx, val.GetOperatorAccountID())
@@ -130,7 +131,7 @@ func (k Keeper) AllocateTokensToValidator(ctx sdk.Context, val types.StakingExpo
 
 	// update outstanding rewards
 	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(
+		chainTypes.NewEvent(ctx,
 			types.EventTypeRewards,
 			sdk.NewAttribute(sdk.AttributeKeyAmount, tokens.String()),
 			sdk.NewAttribute(types.AttributeKeyValidator, val.GetOperator().String()),
@@ -138,8 +139,7 @@ func (k Keeper) AllocateTokensToValidator(ctx sdk.Context, val types.StakingExpo
 	)
 	outstanding := k.GetValidatorOutstandingRewards(ctx, val.GetOperatorAccountID())
 	outstanding.Rewards = outstanding.Rewards.Add(tokens...)
-	ctx.Logger().Debug("AllocateTokensToValidator",
-		"operator", val.GetOperatorAccountID(),
-		"outstanding", outstanding)
+	ctx.Logger().Debug("AllocateTokensToValidator", "height：", ctx.BlockHeader().Height,
+		"operator", val.GetOperatorAccountID(), "outstanding", outstanding)
 	k.SetValidatorOutstandingRewards(ctx, val.GetOperatorAccountID(), outstanding)
 }

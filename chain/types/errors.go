@@ -39,7 +39,6 @@ var (
 	ErrKuMsgDataUnmarshal      = sdkerrors.Register(KuCodeSpace, errorCode(kuMsgErrorCodeRoot, 8), "KuMsg msg data unmarshal error")
 	ErrKuMsgDataSameAccount    = sdkerrors.Register(KuCodeSpace, errorCode(kuMsgErrorCodeRoot, 9), "KuMsg msg same account error")
 	ErrKuMsgDataNotFindAccount = sdkerrors.Register(KuCodeSpace, errorCode(kuMsgErrorCodeRoot, 10), "KuMsg msg can not find account error")
-	ErrKuMsgAccountIDNil       = sdkerrors.Register(KuCodeSpace, errorCode(kuMsgErrorCodeRoot, 11), "KuMsg msg account id should not be nil")
 )
 
 var (

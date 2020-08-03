@@ -18,4 +18,15 @@ const (
 	AttributeKeyDelegator         = "delegator"
 	AttributeKeyCompletionTime    = "completion_time"
 	AttributeValueCategory        = ModuleName
+
+	AttributeKeyHeight          = "height"
+	AttributeKeyAddress         = "Address"
+	AttributeKeyConsensusPubkey = "ConsensusPubkey"
+	AttributeKeyJailed          = "Jailed"
+	AttributeKeyStatus          = "Status"
+	AttributeKeyTokens          = "Tokens"
+	AttributeKeyDelegatorShares = "DelegatorShares"
+	AttributeKeyDescription     = "Description"
+	AttributeKeyUnbondingHeight = "UnbondingHeight"
+	AttributeKeyUnbondingTime   = "UnbondingTime"
 )

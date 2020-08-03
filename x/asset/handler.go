@@ -71,20 +71,30 @@ func handleMsgCreate(ctx chainTypes.Context, k keeper.AssetCoinsKeeper, msg *typ
 		return nil, sdkerrors.Wrapf(err, "msg create coin %s", msgData.Symbol)
 	}
 
+	stat, err := k.GetCoinStat(ctx.Context(), msgData.Creator, msgData.Symbol)
+	if err != nil {
+		return nil, sdkerrors.Wrapf(err, "get coin stat from coin %s", msg.Amount.String())
+	}
+
 	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(
+		chainTypes.NewEvent(
+			ctx.Context(),
 			types.EventTypeCreate,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeValueCategory),
-			sdk.NewAttribute(types.AttributeKeyCreator, msgData.Creator.String()),
-			sdk.NewAttribute(types.AttributeKeySymbol, msgData.Symbol.String()),
-			sdk.NewAttribute(types.AttributeKeyMaxSupply, msgData.MaxSupply.String()),
-			sdk.NewAttribute(types.AttributeKeyCanIssue, strconv.FormatBool(msgData.CanIssue)),
-			sdk.NewAttribute(types.AttributeKeyCanLock, strconv.FormatBool(msgData.CanLock)),
-			sdk.NewAttribute(types.AttributeKeyIssueToHeight, strconv.FormatInt(msgData.IssueToHeight, 10)),
-			sdk.NewAttribute(types.AttributeKeyInit, msgData.InitSupply.String()),
+			sdk.NewAttribute(types.AttributeKeyCreator, stat.Creator.String()),
+			sdk.NewAttribute(types.AttributeKeySymbol, stat.Symbol.String()),
+			sdk.NewAttribute(types.AttributeKeySupply, stat.Supply.String()),
+			sdk.NewAttribute(types.AttributeKeyMaxSupply, stat.MaxSupply.String()),
+			sdk.NewAttribute(types.AttributeKeyCanIssue, strconv.FormatBool(stat.CanIssue)),
+			sdk.NewAttribute(types.AttributeKeyCanLock, strconv.FormatBool(stat.CanLock)),
+			sdk.NewAttribute(types.AttributeKeyIssueCreateHeight, strconv.FormatInt(stat.CreateHeight, 10)),
+			sdk.NewAttribute(types.AttributeKeyIssueToHeight, strconv.FormatInt(stat.IssueToHeight, 10)),
+			sdk.NewAttribute(types.AttributeKeyInit, stat.InitSupply.String()),
 			sdk.NewAttribute(types.AttributeKeyDescription, string(msgData.Desc)),
+			sdk.NewAttribute(types.AttributeKeyHeight, strconv.FormatInt(ctx.BlockHeight(), 10)),
 		),
 	)
+	logger.Debug("handleMsgCreate", "desc", string(msgData.Desc))
 
 	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }
@@ -126,7 +136,7 @@ func handleMsgIssue(ctx chainTypes.Context, k keeper.AssetCoinsKeeper, msg *type
 	}
 
 	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(
+		chainTypes.NewEvent(ctx.Context(),
 			types.EventTypeIssue,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeValueCategory),
 			sdk.NewAttribute(types.AttributeKeyCreator, msgData.Creator.String()),
@@ -136,7 +146,6 @@ func handleMsgIssue(ctx chainTypes.Context, k keeper.AssetCoinsKeeper, msg *type
 	)
 
 	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
-
 }
 
 // handleMsgBurn Handle Msg Burn coin
@@ -159,8 +168,8 @@ func handleMsgBurn(ctx chainTypes.Context, k keeper.AssetCoinsKeeper, msg *types
 	}
 
 	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(
-			types.EventTypeIssue,
+		chainTypes.NewEvent(ctx.Context(),
+			types.EventTypeBurn,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeValueCategory),
 			sdk.NewAttribute(types.AttributeKeyFrom, msgData.Id.String()),
 			sdk.NewAttribute(types.AttributeKeyAmount, msgData.Amount.String()),
@@ -208,7 +217,7 @@ func handleMsgLockCoin(ctx chainTypes.Context, k keeper.AssetCoinsKeeper, msg *t
 	}
 
 	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(
+		chainTypes.NewEvent(ctx.Context(),
 			types.EventTypeLock,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeValueCategory),
 			sdk.NewAttribute(types.AttributeKeyFrom, msgData.Id.String()),
@@ -216,6 +225,7 @@ func handleMsgLockCoin(ctx chainTypes.Context, k keeper.AssetCoinsKeeper, msg *t
 			sdk.NewAttribute(types.AttributeKeyUnlockHeight, strconv.Itoa(int(msgData.UnlockBlockHeight))),
 		),
 	)
+	//plugins.HandleEvent(ctx.Context(), types2.ReqEvents{BlockHeight: ctx.BlockHeight(), Events: ctx.EventManager().Events()})
 
 	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }
@@ -229,7 +239,7 @@ func handleMsgUnlockCoin(ctx chainTypes.Context, k keeper.AssetCoinsKeeper, msg 
 		return nil, sdkerrors.Wrapf(err, "msg unlock coin data unmarshal error")
 	}
 
-	logger.Debug("handle coin lock",
+	logger.Debug("handle coin unlock",
 		"id", msgData.Id,
 		"amount", msgData.Amount)
 
@@ -240,13 +250,13 @@ func handleMsgUnlockCoin(ctx chainTypes.Context, k keeper.AssetCoinsKeeper, msg 
 	}
 
 	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(
+		chainTypes.NewEvent(ctx.Context(),
 			types.EventTypeUnlock,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeValueCategory),
 			sdk.NewAttribute(types.AttributeKeyFrom, msgData.Id.String()),
 			sdk.NewAttribute(types.AttributeKeyAmount, msgData.Amount.String()),
 		),
 	)
-
+	//plugins.HandleEvent(ctx.Context(), types2.ReqEvents{BlockHeight: ctx.BlockHeight(), Events: ctx.EventManager().Events()})
 	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }

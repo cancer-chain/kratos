@@ -45,7 +45,7 @@ func GenTxCmd(ctx *server.Context, cdc *codec.Codec, mbm module.BasicManager, sm
 	stakingFuncManager types.StakingFuncManager) *cobra.Command {
 
 	ipDefault, _ := server.ExternalIP()
-	fsCreateValidator, flagNodeID, flagPubKey, _, defaultsDesc := smbh.CreateValidatorMsgHelpers(ipDefault)
+	fsCreateValidator, flagNodeID, flagPubKey, flagAmount, defaultsDesc := smbh.CreateValidatorMsgHelpers(ipDefault)
 
 	cmd := &cobra.Command{
 		Use:   "gentx [validator-operator-account]",
@@ -110,6 +110,18 @@ func GenTxCmd(ctx *server.Context, cdc *codec.Codec, mbm module.BasicManager, sm
 			viper.Set(flags.FlagHome, viper.GetString(flagClientHome))
 			smbh.PrepareFlagsForTxCreateValidator(config, nodeID, genDoc.ChainID, valPubKey)
 
+			// Fetch the amount of coins staked
+			amount := viper.GetString(flagAmount)
+			coins, err := chainTypes.ParseCoins(amount)
+			if err != nil {
+				return errors.Wrap(err, "failed to parse coins")
+			}
+
+			err = genutil.ValidateAccountInGenesis(genesisState, genBalIterator, key.GetAddress(), coins, cdc, stakingFuncManager)
+			if err != nil {
+				return errors.Wrap(err, "failed to validate account in genesis")
+			}
+
 			txBldr := txutil.NewTxBuilderFromCLI(inBuf).WithTxEncoder(txutil.GetTxEncoder(cdc))
 			cliCtx := txutil.NewKuCLICtxByBuf(cdc, inBuf)
 
@@ -131,17 +143,17 @@ func GenTxCmd(ctx *server.Context, cdc *codec.Codec, mbm module.BasicManager, sm
 				return errors.Wrap(err, "failed to build create-validator message")
 			}
 
-			// set payer in gentx
-			txBldr = txBldr.WithPayer(args[0])
-
 			if key.GetType() == keys.TypeOffline || key.GetType() == keys.TypeMulti {
 				fmt.Println("Offline key passed in. Use `tx sign` command to sign:")
-				return txutil.PrintUnsignedStdTx(txBldr, cliCtx, []sdk.Msg{msg, msgdelegator})
+				return txutil.PrintUnsignedStdTx(txBldr, cliCtx, []sdk.Msg{msg})
 			}
 
 			// write the unsigned transaction to the buffer
 			w := bytes.NewBuffer([]byte{})
 			cliCtx = cliCtx.WithOutput(w)
+
+			fmt.Printf("cdc %v\n\n", cliCtx.Codec)
+			txBldr = txBldr.WithPayer(args[0])
 
 			if err = txutil.PrintUnsignedStdTx(txBldr, cliCtx, []sdk.Msg{msg, msgdelegator}); err != nil {
 				return errors.Wrap(err, "failed to print unsigned std tx")
