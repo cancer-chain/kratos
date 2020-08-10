@@ -365,4 +365,3 @@ func TestQuerier(t *testing.T) {
 		}
 	})
 }
-

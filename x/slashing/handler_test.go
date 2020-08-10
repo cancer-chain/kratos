@@ -8,6 +8,7 @@ import (
 
 	abci "github.com/tendermint/tendermint/abci/types"
 
+	"encoding/hex"
 	"github.com/KuChainNetwork/kuchain/chain/config"
 	"github.com/KuChainNetwork/kuchain/chain/constants"
 	"github.com/KuChainNetwork/kuchain/chain/types"
@@ -15,9 +16,8 @@ import (
 	slashingTypes "github.com/KuChainNetwork/kuchain/x/slashing/types"
 	stakingTypes "github.com/KuChainNetwork/kuchain/x/staking/types"
 	"github.com/tendermint/tendermint/crypto"
-	"time"
-	"encoding/hex"
 	"github.com/tendermint/tendermint/crypto/ed25519"
+	"time"
 )
 
 func newTestApp(wallet *simapp.Wallet) (addAlice, addJack, addValidator sdk.AccAddress, accAlice, accJack, accValidator types.AccountID, app *simapp.SimApp) {

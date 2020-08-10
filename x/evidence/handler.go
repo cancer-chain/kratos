@@ -32,7 +32,7 @@ func handleMsgSubmitEvidence(ctx sdk.Context, k Keeper, msg exported.MsgSubmitEv
 	}
 
 	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(
+		chainTypes.NewEvent(ctx,
 			sdk.EventTypeMessage,
 			sdk.NewAttribute(sdk.AttributeKeyModule, AttributeValueCategory),
 			sdk.NewAttribute(sdk.AttributeKeySender, msg.GetSubmitter().String()),

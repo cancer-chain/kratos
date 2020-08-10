@@ -16,5 +16,6 @@ var (
 )
 
 type (
-	StdTx = chainTypes.StdTx
+	StdTx    = chainTypes.StdTx
+	BlockMsg = types.ReqBlock
 )

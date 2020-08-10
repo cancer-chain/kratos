@@ -6,6 +6,7 @@ import (
 	"github.com/KuChainNetwork/kuchain/plugins/db_history/chaindb"
 	"github.com/KuChainNetwork/kuchain/plugins/db_history/config"
 	"github.com/go-pg/pg/v10"
+	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
 )
 
@@ -17,26 +18,59 @@ func (w dbWork) IsStopped() bool {
 	return w.msg == nil
 }
 
+func (w dbWork) IsEndBlock() (bool, int64) {
+	if msg, ok := w.msg.(abci.RequestEndBlock); ok {
+		return true, msg.Height
+	}
+
+	return false, 0
+}
+
 type dbService struct {
-	logger   log.Logger
-	database *pg.DB
+	logger      log.Logger
+	database    *pg.DB
+	errDatabase *pg.DB
+
+	stat dbMsgs4Block
+	sync *SyncState
 
 	dbChan chan dbWork
 	wg     sync.WaitGroup
 }
 
+func (dbs *dbService) GetBD() *pg.DB {
+	return dbs.database
+}
+
 // NewDB create a connection commit event to db
 func NewDB(cfg config.Cfg, logger log.Logger) *dbService {
-	return &dbService{
+	res := &dbService{
 		database: pg.Connect(&pg.Options{
 			Addr:     cfg.DB.Address,
 			User:     cfg.DB.User,
 			Password: cfg.DB.Password,
 			Database: cfg.DB.Database,
 		}),
+
+		errDatabase: pg.Connect(&pg.Options{
+			Addr:     cfg.DB.Address,
+			User:     cfg.DB.User,
+			Password: cfg.DB.Password,
+			Database: cfg.DB.Database,
+		}),
+
 		logger: logger,
 		dbChan: make(chan dbWork, 512),
 	}
+
+	if err := createSchema(res.database, res.logger); err != nil {
+		panic(err)
+	}
+
+	res.sync = NewChainSyncStat(res.database, logger)
+	res.stat = NewDBMsgs4Block(res.sync.BlockNum)
+
+	return res
 }
 
 func (db *dbService) Start() error {
@@ -45,10 +79,6 @@ func (db *dbService) Start() error {
 	db.wg.Add(1)
 	go func() {
 		defer db.wg.Done()
-
-		if err := createSchema(db.database); err != nil {
-			panic(err)
-		}
 
 		for {
 			work, ok := <-db.dbChan
@@ -60,6 +90,14 @@ func (db *dbService) Start() error {
 			if work.IsStopped() {
 				db.logger.Info("db service stopped")
 				return
+			}
+
+			if ok, height := work.IsEndBlock(); ok {
+				if err := UpdateChainSyncStat(db.database, db.logger, height, db.sync.ChainID); err != nil {
+					db.logger.Error("UpdateChainSyncStat error", "err", err)
+				}
+				// no need process
+				continue
 			}
 
 			if err := db.Process(&work); err != nil {

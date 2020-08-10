@@ -228,16 +228,18 @@ func NewKuchainApp(
 		mint.NewAppModule(app.mintKeeper, app.supplyKeeper),
 		evidence.NewAppModule(app.evidenceKeeper, app.accountKeeper, app.assetKeeper),
 		gov.NewAppModule(app.govKeeper, app.accountKeeper, app.assetKeeper, app.supplyKeeper),
-		plugin.NewAppModule(),
+		plugin.NewAppModule(app.stakingKeeper, cdc),
 	)
 
 	// plugin.ModuleName MUST be the last
+
 	app.mm.SetOrderBeginBlockers(mint.ModuleName, distr.ModuleName, slashing.ModuleName, evidence.ModuleName, plugin.ModuleName)
 	app.mm.SetOrderEndBlockers(staking.ModuleName, gov.ModuleName, plugin.ModuleName)
 
 	// NOTE: The genutils module must occur after staking so that pools are
 	// properly initialized with tokens from genesis accounts.
 	app.mm.SetOrderInitGenesis(
+		plugin.ModuleName,
 		account.ModuleName,
 		asset.ModuleName,
 		distr.ModuleName,

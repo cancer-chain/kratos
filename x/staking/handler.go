@@ -1,6 +1,7 @@
 package staking
 
 import (
+	"strconv"
 	"time"
 
 	"github.com/KuChainNetwork/kuchain/chain/msg"
@@ -138,12 +139,10 @@ func handleMsgCreateValidator(ctx sdk.Context, msg types.MsgCreateValidator, k k
 	// call the after-creation hook
 	k.AfterValidatorCreated(ctx, validator.OperatorAccount)
 
+	Evs := keeper.MakeValidatorEvent(ctx, types.EventTypeCreateValidator, validator)
 	ctx.EventManager().EmitEvents(sdk.Events{
-		sdk.NewEvent(
-			types.EventTypeCreateValidator,
-			sdk.NewAttribute(types.AttributeKeyValidator, msg.ValidatorAccount.String()),
-		),
-		sdk.NewEvent(
+		Evs,
+		chainTypes.NewEvent(ctx,
 			sdk.EventTypeMessage,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeValueCategory),
 			sdk.NewAttribute(sdk.AttributeKeySender, msg.DelegatorAccount.String()),
@@ -181,12 +180,10 @@ func handleMsgEditValidator(ctx sdk.Context, msg types.MsgEditValidator, k keepe
 
 	k.SetValidator(ctx, validator)
 
+
+	Evs := keeper.MakeValidatorEvent(ctx, types.EventTypeEditValidator, validator)
 	ctx.EventManager().EmitEvents(sdk.Events{
-		sdk.NewEvent(
-			types.EventTypeEditValidator,
-			sdk.NewAttribute(types.AttributeKeyCommissionRate, validator.Commission.String()),
-			sdk.NewAttribute(types.AttributeKeyMinSelfDelegation, validator.MinSelfDelegation.String()),
-		),
+		Evs,
 		sdk.NewEvent(
 			sdk.EventTypeMessage,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeValueCategory),
@@ -218,17 +215,20 @@ func handleMsgDelegate(ctx chainTypes.Context, msg types.MsgDelegate, k keeper.K
 	}
 
 	ctx.EventManager().EmitEvents(sdk.Events{
-		sdk.NewEvent(
+		chainTypes.NewEvent(ctx.Context(),
 			types.EventTypeDelegate,
 			sdk.NewAttribute(types.AttributeKeyValidator, msg.ValidatorAccount.String()),
-			sdk.NewAttribute(sdk.AttributeKeyAmount, msg.Amount.Amount.String()),
+			sdk.NewAttribute(types.AttributeKeyDelegator, msg.DelegatorAccount.String()),
+			sdk.NewAttribute(sdk.AttributeKeyAmount, msg.Amount.String()),
+			sdk.NewAttribute(types.AttributeKeyHeight, strconv.FormatInt(ctx.BlockHeight(), 10)),
 		),
-		sdk.NewEvent(
+		chainTypes.NewEvent(ctx.Context(),
 			sdk.EventTypeMessage,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeValueCategory),
 			sdk.NewAttribute(sdk.AttributeKeySender, msg.DelegatorAccount.String()),
 		),
 	})
+
 	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }
 
@@ -256,13 +256,15 @@ func handleMsgUndelegate(ctx sdk.Context, msg types.MsgUndelegate, k keeper.Keep
 
 	completionTimeBz := types.ModuleCdc.MustMarshalBinaryLengthPrefixed(ts)
 	ctx.EventManager().EmitEvents(sdk.Events{
-		sdk.NewEvent(
+		chainTypes.NewEvent(ctx,
 			types.EventTypeUnbond,
 			sdk.NewAttribute(types.AttributeKeyValidator, msg.ValidatorAccount.String()),
-			sdk.NewAttribute(sdk.AttributeKeyAmount, msg.Amount.Amount.String()),
+			sdk.NewAttribute(types.AttributeKeyDelegator, msg.DelegatorAccount.String()),
+			sdk.NewAttribute(sdk.AttributeKeyAmount, msg.Amount.String()),
 			sdk.NewAttribute(types.AttributeKeyCompletionTime, completionTime.Format(time.RFC3339)),
+			sdk.NewAttribute(types.AttributeKeyHeight, strconv.FormatInt(ctx.BlockHeight(), 10)),
 		),
-		sdk.NewEvent(
+		chainTypes.NewEvent(ctx,
 			sdk.EventTypeMessage,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeValueCategory),
 			sdk.NewAttribute(sdk.AttributeKeySender, msg.DelegatorAccount.String()),
@@ -298,14 +300,15 @@ func handleMsgBeginRedelegate(ctx sdk.Context, msg types.MsgBeginRedelegate, k k
 
 	completionTimeBz := types.ModuleCdc.MustMarshalBinaryLengthPrefixed(ts)
 	ctx.EventManager().EmitEvents(sdk.Events{
-		sdk.NewEvent(
+		chainTypes.NewEvent(ctx,
 			types.EventTypeRedelegate,
 			sdk.NewAttribute(types.AttributeKeySrcValidator, msg.ValidatorSrcAccount.String()),
 			sdk.NewAttribute(types.AttributeKeyDstValidator, msg.ValidatorDstAccount.String()),
-			sdk.NewAttribute(sdk.AttributeKeyAmount, msg.Amount.Amount.String()),
+			sdk.NewAttribute(sdk.AttributeKeyAmount, msg.Amount.String()),
 			sdk.NewAttribute(types.AttributeKeyCompletionTime, completionTime.Format(time.RFC3339)),
+			sdk.NewAttribute(types.AttributeKeyHeight, strconv.FormatInt(ctx.BlockHeight(), 10)),
 		),
-		sdk.NewEvent(
+		chainTypes.NewEvent(ctx,
 			sdk.EventTypeMessage,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeValueCategory),
 			sdk.NewAttribute(sdk.AttributeKeySender, msg.DelegatorAccount.String()),

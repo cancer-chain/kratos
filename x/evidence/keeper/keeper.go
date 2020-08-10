@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"fmt"
+	chaintype "github.com/KuChainNetwork/kuchain/chain/types"
 
 	"github.com/KuChainNetwork/kuchain/x/evidence/exported"
 	"github.com/KuChainNetwork/kuchain/x/evidence/external"
@@ -93,7 +94,7 @@ func (k Keeper) SubmitEvidence(ctx sdk.Context, evidence exported.Evidence) erro
 	}
 
 	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(
+		chaintype.NewEvent(ctx,
 			types.EventTypeSubmitEvidence,
 			sdk.NewAttribute(types.AttributeKeyEvidenceHash, evidence.Hash().String()),
 		),

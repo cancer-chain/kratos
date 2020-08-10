@@ -1,6 +1,8 @@
 package eventutil_test
 
 import (
+	"fmt"
+	"github.com/stretchr/testify/require"
 	"testing"
 
 	"github.com/KuChainNetwork/kuchain/test/simapp"
@@ -56,4 +58,21 @@ func TestUnmarshalEvent(t *testing.T) {
 			So(testEvtStruct.Bool2, ShouldEqual, false)
 		})
 	})
+}
+
+func TestUnmarshalEvent2(t *testing.T) {
+
+	var testEvtStruct EventValidator1
+	err := eventutil.UnmarshalEvent(VEvent, &testEvtStruct)
+
+	require.NoError(t, err)
+
+	fmt.Println(testEvtStruct.Sender)
+	fmt.Println(testEvtStruct.Height)
+	fmt.Println(testEvtStruct.Address)
+
+	require.Equal(t, testEvtStruct.Sender, Send)
+	require.Equal(t, testEvtStruct.Height, H)
+	require.Equal(t, testEvtStruct.Address, Addr)
+
 }

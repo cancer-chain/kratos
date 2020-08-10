@@ -1,16 +1,29 @@
 package chaindb
 
 import (
+	"github.com/tendermint/tendermint/libs/log"
+
 	"github.com/go-pg/pg/v10"
 	"github.com/go-pg/pg/v10/orm"
 )
 
-func RegOrm(db *pg.DB) error {
+func RegOrm(db *pg.DB, logger log.Logger) error {
 	models := []interface{}{
 		(*eventInDB)(nil),
-		(*txInDB)(nil),
 		(*MessageInDB)(nil),
 		(*KuTransferInDB)(nil),
+		(*blockInDB)(nil),
+		(*CreateAccCoinsModel)(nil),
+		(*CreateAccountModel)(nil),
+		(*BlockInfo)(nil),
+		(*CreateCoinTypeModel)(nil),
+		(*CreateDelegationModel)(nil),
+		(*CreateDelegationChangeModel)(nil),
+		(*CreateLockAccCoinsModel)(nil),
+		(*EventValidator)(nil),
+		(*CreateTxModel)(nil),
+		(*CreateTxMsgsModel)(nil),
+		(*ErrMsg)(nil),
 	}
 
 	for _, model := range models {
@@ -22,5 +35,6 @@ func RegOrm(db *pg.DB) error {
 			return err
 		}
 	}
+
 	return nil
 }

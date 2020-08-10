@@ -238,7 +238,7 @@ func NewSimApp(
 		mint.NewAppModule(app.mintKeeper, app.supplyKeeper),
 		evidence.NewAppModule(app.evidenceKeeper, app.accountKeeper, app.assetKeeper),
 		gov.NewAppModule(app.govKeeper, app.accountKeeper, app.assetKeeper, app.supplyKeeper),
-		plugin.NewAppModule(),
+		plugin.NewAppModule(app.stakingKeeper, cdc),
 	)
 
 	// plugin.ModuleName MUST be the last

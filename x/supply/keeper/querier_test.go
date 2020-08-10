@@ -101,7 +101,6 @@ func TestQuerySupply(t *testing.T) {
 	keeper := *app.SupplyKeeper()
 	cdc := app.Codec()
 
-
 	supplyCoins := chainType.NewCoins(
 		chainType.NewCoin(constants.DefaultBondDenom, sdk.NewInt(100)),
 		chainType.NewCoin(constants.ChainMainNameStr+"/"+"photon", sdk.NewInt(50)),
@@ -124,7 +123,6 @@ func TestQuerySupply(t *testing.T) {
 	queryTotalSupplyParams := types.NewQueryTotalSupplyParams(1, 10)
 	bz, errRes := cdc.MarshalJSON(queryTotalSupplyParams)
 	require.Nil(t, errRes)
-
 
 	query.Path = fmt.Sprintf("/custom/supply/%s", types.QueryTotalSupply)
 	query.Data = bz

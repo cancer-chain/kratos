@@ -49,7 +49,7 @@ func handleMsgModifyWithdrawAccountId(ctx chainTypes.Context, msg types.MsgSetWi
 		}
 
 		ctx.EventManager().EmitEvent(
-			sdk.NewEvent(
+			chainTypes.NewEvent(ctx.Context(),
 				sdk.EventTypeMessage,
 				sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeValueCategory),
 				sdk.NewAttribute(sdk.AttributeKeySender, dataMsg.DelegatorAccountid.String()),
@@ -75,7 +75,7 @@ func handleMsgWithdrawDelegatorReward(ctx chainTypes.Context, msg types.MsgWithd
 	}
 
 	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(
+		chainTypes.NewEvent(ctx.Context(),
 			sdk.EventTypeMessage,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeValueCategory),
 			sdk.NewAttribute(sdk.AttributeKeySender, dataMsg.DelegatorAccountId.String()),
@@ -95,7 +95,7 @@ func handleMsgWithdrawValidatorCommission(ctx chainTypes.Context, msg types.MsgW
 	}
 
 	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(
+		chainTypes.NewEvent(ctx.Context(),
 			sdk.EventTypeMessage,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeValueCategory),
 			sdk.NewAttribute(sdk.AttributeKeySender, dataMsg.ValidatorAccountId.String()),
@@ -103,16 +103,4 @@ func handleMsgWithdrawValidatorCommission(ctx chainTypes.Context, msg types.MsgW
 	)
 
 	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
-}
-
-func NewCommunityPoolSpendProposalHandler(k Keeper) types.GovTypesHandler {
-	return func(ctx sdk.Context, content types.GovTypesContent) error {
-		switch c := content.(type) {
-		case types.CommunityPoolSpendProposal:
-			return keeper.HandleCommunityPoolSpendProposal(ctx, k, c)
-
-		default:
-			return sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "unrecognized distr proposal content type: %T", c)
-		}
-	}
 }

@@ -7,6 +7,7 @@ import (
 	"github.com/KuChainNetwork/kuchain/x/account/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"strconv"
 )
 
 // NewHandler returns a handler for "bank" type messages.
@@ -72,11 +73,12 @@ func handleMsgCreateAccount(ctx chainTypes.Context, k Keeper, msg *types.MsgCrea
 	k.AddAccountByAuth(ctx.Context(), msgData.Auth, newAccount.GetName().String())
 
 	ctx.EventManager().EmitEvents(sdk.Events{
-		sdk.NewEvent(
+		chainTypes.NewEvent(ctx.Context(),
 			types.EventTypeCreateAccount,
 			sdk.NewAttribute(types.AttributeKeyCreator, msg.From.String()),
 			sdk.NewAttribute(types.AttributeKeyAccount, msgData.Name.String()),
 			sdk.NewAttribute(types.AttributeKeyAuth, msgData.Auth.String()),
+			sdk.NewAttribute(types.AttributeKeyHeight, strconv.FormatInt(ctx.BlockHeight(), 10)),
 		),
 	})
 
@@ -117,7 +119,7 @@ func handleMsgUpdateAccountAuth(ctx chainTypes.Context, k Keeper, msg *types.Msg
 	k.DeleteAccountByAuth(ctx.Context(), oldAuth, accountStat.GetName().String())
 
 	ctx.EventManager().EmitEvents(sdk.Events{
-		sdk.NewEvent(
+		chainTypes.NewEvent(ctx.Context(),
 			types.EventTypeUpdateAccountAuth,
 			sdk.NewAttribute(types.AttributeKeyAccount, msgData.Name.String()),
 			sdk.NewAttribute(types.AttributeKeyAuth, msgData.Auth.String()),

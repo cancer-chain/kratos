@@ -3,6 +3,7 @@ package keeper
 import (
 	"bytes"
 	"fmt"
+	chainTypes "github.com/KuChainNetwork/kuchain/chain/types"
 	"sort"
 
 	stakingexport "github.com/KuChainNetwork/kuchain/x/staking/exported"
@@ -38,7 +39,7 @@ func (k Keeper) BlockValidatorUpdates(ctx sdk.Context) []abci.ValidatorUpdate {
 		}
 
 		ctx.EventManager().EmitEvent(
-			sdk.NewEvent(
+			chainTypes.NewEvent(ctx,
 				types.EventTypeCompleteUnbonding,
 				sdk.NewAttribute(sdk.AttributeKeyAmount, balances.String()),
 				sdk.NewAttribute(types.AttributeKeyValidator, dvPair.ValidatorAccount.String()),
@@ -61,7 +62,7 @@ func (k Keeper) BlockValidatorUpdates(ctx sdk.Context) []abci.ValidatorUpdate {
 		}
 
 		ctx.EventManager().EmitEvent(
-			sdk.NewEvent(
+			chainTypes.NewEvent(ctx,
 				types.EventTypeCompleteRedelegation,
 				sdk.NewAttribute(sdk.AttributeKeyAmount, balances.String()),
 				sdk.NewAttribute(types.AttributeKeyDelegator, dvvTriplet.DelegatorAccount.String()),

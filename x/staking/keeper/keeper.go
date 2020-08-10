@@ -3,7 +3,9 @@ package keeper
 import (
 	"container/list"
 	"fmt"
+	"strconv"
 
+	chaintypes "github.com/KuChainNetwork/kuchain/chain/types"
 	"github.com/KuChainNetwork/kuchain/x/staking/external"
 	"github.com/KuChainNetwork/kuchain/x/staking/types"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -104,6 +106,23 @@ func (k Keeper) SetLastTotalPower(ctx sdk.Context, power sdk.Int) {
 
 func (k Keeper) ValidatorAccount(ctx sdk.Context, id AccountID) bool {
 	return k.accountKeeper.GetAccount(ctx, id) != nil
+}
+
+func MakeValidatorEvent(ctx sdk.Context, EventTypeStr string, validator types.Validator) sdk.Event {
+	return chaintypes.NewEvent(ctx,
+		EventTypeStr,
+		sdk.NewAttribute(types.AttributeKeyAddress, validator.OperatorAccount.String()),
+		sdk.NewAttribute(types.AttributeKeyConsensusPubkey, validator.ConsensusPubkey),
+		sdk.NewAttribute(types.AttributeKeyJailed, strconv.FormatBool(validator.Jailed)),
+		sdk.NewAttribute(types.AttributeKeyStatus, fmt.Sprintf("%d", validator.Status)),
+		sdk.NewAttribute(types.AttributeKeyTokens, validator.Tokens.String()),
+		sdk.NewAttribute(types.AttributeKeyDelegatorShares, validator.DelegatorShares.String()),
+		sdk.NewAttribute(types.AttributeKeyDescription, validator.Description.String()),
+		sdk.NewAttribute(types.AttributeKeyUnbondingHeight, fmt.Sprintf("%d", validator.UnbondingHeight)),
+		sdk.NewAttribute(types.AttributeKeyUnbondingTime, validator.UnbondingTime.String()),
+		sdk.NewAttribute(types.AttributeKeyCommissionRate, validator.Commission.String()),
+		sdk.NewAttribute(types.AttributeKeyMinSelfDelegation, validator.MinSelfDelegation.String()),
+	)
 }
 
 func (k Keeper) GetStoreKey() sdk.StoreKey {
