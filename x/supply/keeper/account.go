@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	chainTypes "github.com/KuChainNetwork/kuchain/chain/types"
 	"github.com/KuChainNetwork/kuchain/x/supply/exported"
 	"github.com/KuChainNetwork/kuchain/x/supply/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -82,5 +83,12 @@ func (k Keeper) InitModuleAccount(ctx sdk.Context, moduleName string) error {
 	maccI := (k.accountKeeper.NewAccount(ctx, macc)).(exported.ModuleAccountI) // set the account number
 	k.SetModuleAccount(ctx, maccI)
 
+	ctx.EventManager().EmitEvent(
+		chainTypes.NewEvent(ctx,
+			types.EventTypeInitModuleAccount,
+			sdk.NewAttribute(types.AttributeKeyAccount, maccI.GetName().String()),
+			sdk.NewAttribute(types.AttributeKeyCreator, maccI.GetName().String()),
+		),
+	)
 	return nil
 }

@@ -9,8 +9,12 @@ const (
 	EventTypeUndelegateCoinsFromModuleToAccount = "UndelegateCoinsFromModuleToAccount"
 	EventTypeModuleMintCoins                    = "ModuleMintCoins"
 	EventTypeModuleBurnCoins                    = "ModuleBurnCoins"
+	EventTypeInitModuleAccount                  = "initModuleAccount"
 
-	AttributeKeyFrom   = "from"
-	AttributeKeyTo     = "to"
-	AttributeKeyAmount = "amount"
+	AttributeKeyFrom    = "from"
+	AttributeKeyTo      = "to"
+	AttributeKeyAmount  = "amount"
+	AttributeKeyAccount = "account"
+	AttributeKeyAuth    = "auth"
+	AttributeKeyCreator = "creator"
 )

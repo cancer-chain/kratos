@@ -50,7 +50,7 @@ func InsertEvent(db *pg.DB, logger log.Logger, evt *types.Event) error {
 		EventAccCoinsMove(db, logger, evt)
 	} else if evt.Type == "ModuleMintCoins" {
 		EventAccCoinsMintAdd(db, logger, evt)
-	} else if evt.Type == "account.create" {
+	} else if evt.Type == "account.create" || evt.Type == "initModuleAccount" {
 		EventAccountAdd(db, logger, evt)
 	} else if evt.Type == "account.authupdate" {
 		EventAccountUpdate(db, logger, evt)
