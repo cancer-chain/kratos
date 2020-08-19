@@ -71,6 +71,7 @@ func EventAccountAdd(db *pg.DB, logger log.Logger, evt *types.Event) {
 	}
 
 	m := makeAccountAddSql(AccountMsg)
+
 	err = accExec(db, m, logger)
 	if err != nil {
 		EventErr(db, logger, NewErrMsg(err))

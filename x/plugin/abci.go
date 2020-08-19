@@ -3,6 +3,7 @@ package plugin
 import (
 	"encoding/json"
 	"github.com/KuChainNetwork/kuchain/plugins"
+	"github.com/KuChainNetwork/kuchain/plugins/db_history/chaindb"
 	"github.com/KuChainNetwork/kuchain/plugins/types"
 	"github.com/KuChainNetwork/kuchain/x/staking"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -13,30 +14,50 @@ import (
 // BeginBlocker check for infraction evidence or downtime of validators
 // on every begin block
 
-func PluginsGetValidatorByConsAddr(ctx sdk.Context, consAcc sdk.ConsAddress, k staking.Keeper) staking.ValidatorI {
+func getValidatorByConsAddr(ctx sdk.Context, consAcc sdk.ConsAddress, k staking.Keeper) staking.ValidatorI {
 	validator := k.ValidatorByConsAddr(ctx, consAcc)
 	return validator
 }
 
+var storageBlockHeight int64
+
 func BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock, k staking.Keeper, codec *codec.Codec) {
-	proposerValidator := PluginsGetValidatorByConsAddr(ctx, ctx.BlockHeader().ProposerAddress, k)
-	bz, _ := json.Marshal(proposerValidator)
+	ctx.Logger().Debug("EndBlocker", "SyncBlockHeight:", chaindb.SyncBlockHeight)
 
-	time := types.GetTxInfo(ctx, req.Header.Height, codec, plugins.HandleTx, plugins.HandleEventFromBlock)
-	plugins.HandleBeginBlock(ctx,
-		types.ReqBlock{
-			RequestBeginBlock: req,
-			ValidatorInfo:     string(bz),
-			Time:              time,
-		},
-	)
+	if req.Header.Height < 2 {
+		return
+	}
 
-	ctx.Logger().Debug("BeginBlocker",
-		"proposerValidator:", proposerValidator, "proposer:", string(bz))
+	storageBlockHeight = chaindb.SyncBlockHeight
+	err, block, rtx, rEvents, rTxEvents, rFeeEvents := types.GetBlockTxInfo(ctx, storageBlockHeight+1, codec)
+	if err == nil {
+		proposerValidator := getValidatorByConsAddr(ctx, ctx.BlockHeader().ProposerAddress, k)
+		bz, _ := json.Marshal(proposerValidator)
+
+		plugins.HandleBeginBlock(
+			ctx,
+			types.ReqBeginBlock{
+				RequestBeginBlock: block,
+				Tx:                rtx,
+				Events:            rEvents,
+				TxEvents:          rTxEvents,
+				FeeEvents:         rFeeEvents,
+				ValidatorInfo:     string(bz),
+				Time:              block.Time,
+			},
+		)
+		ctx.Logger().Debug("BeginBlocker",
+			"proposerValidator:", proposerValidator, "proposer:", string(bz))
+	} else {
+		ctx.Logger().Error("BeginBlocker", "GetBlockTxInfo err:", err)
+	}
 }
 
 func EndBlocker(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
-	plugins.HandleEndBlock(ctx, req)
+	if req.Height < 2 {
+		return []abci.ValidatorUpdate{}
+	}
 
+	plugins.HandleEndBlock(ctx, types.ReqEndBlock{Height: storageBlockHeight + 1})
 	return []abci.ValidatorUpdate{}
 }

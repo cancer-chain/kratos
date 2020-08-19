@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"github.com/KuChainNetwork/kuchain/plugins/types"
 	"github.com/go-pg/pg/v10"
-	"github.com/go-pg/pg/v10/orm"
 	"github.com/tendermint/tendermint/libs/log"
+	"sync/atomic"
 )
 
 type BlockInfo struct {
@@ -36,7 +36,7 @@ type BlockInfo struct {
 	BlockHeaderProposerAddress    string `json:"block_header_proposeraddress"`
 	BlockHeaderProposer           string `json:"block_header_proposer"`
 	BlockDataHash                 string `json:"block_evidence_hash"`
-	BlockByzantineValidators      string `json:"block_byzantinevalidators"`
+	BlockHeaderValidators         string `json:"block_header_validators"`
 	BlockLastCommitVotes          string `json:"block_lastcommit_votes"`
 	BlockLastCommitRound          string `json:"block_lastcommit_round"`
 	BlockLastCommitInfo           string `json:"block_lastcommit_info"`
@@ -48,17 +48,16 @@ type blockInDB struct {
 
 	ID int64 // both "Id" and "ID" are detected as primary key
 
-	types.ReqBlock
+	types.ReqBeginBlock
 }
 
-func newBlockInDB(tb types.ReqBlock) *blockInDB {
+func newBlockInDB(tb types.ReqBeginBlock) *blockInDB {
 	return &blockInDB{
-		ReqBlock: tb,
+		ReqBeginBlock: tb,
 	}
 }
 
 func InsertBlockInfo(db *pg.DB, logger log.Logger, bk *blockInDB) error {
-	logger.Debug("InsertBlockInfo", "bk", bk.Header.Height)
 
 	err := db.Insert(bk)
 	if err != nil {
@@ -66,37 +65,42 @@ func InsertBlockInfo(db *pg.DB, logger log.Logger, bk *blockInDB) error {
 	}
 
 	msg := BlockInfo{
-		BlockHash:                     Hash2Hex(bk.Hash),
-		BlockIdPartsHeaderTotal:       "",
-		BlockIdPartsHeaderHash:        "",
-		BlockHeaderVersionBlock:       bk.Header.Version.String(),
-		BlockHeaderVersionApp:         fmt.Sprintf("%d", bk.Header.Version.App),
-		BlockHeaderChainId:            bk.Header.ChainID,
-		BlockHeaderHeight:             fmt.Sprintf("%d", bk.Header.Height),
-		BlockHeaderTime:               TimeFormat(bk.Header.Time),
-		BlockHeaderLastBlockIdHash:    Hash2Hex(bk.Header.LastBlockId.Hash),
-		BlockHeaderLastCommitHash:     Hash2Hex(bk.Header.LastCommitHash),
-		BlockHeaderDataHash:           Hash2Hex(bk.Header.DataHash),
-		BlockHeaderNextValidatorsHash: Hash2Hex(bk.Header.NextValidatorsHash),
-		BlockHeaderConsensusHash:      Hash2Hex(bk.Header.ConsensusHash),
-		BlockHeaderAppHash:            Hash2Hex(bk.Header.AppHash),
-		BlockHeaderLastResultsHash:    Hash2Hex(bk.Header.LastResultsHash),
-		BlockHeaderEvidenceHash:       Hash2Hex(bk.Header.EvidenceHash),
-		BlockHeaderProposerAddress:    Hash2Hex(bk.Header.ProposerAddress),
-		BlockHeaderProposer:           Hash2Hex(bk.Header.ProposerAddress),
-		BlockDataHash:                 "",
-		BlockLastCommitRound:          fmt.Sprintf("%d", bk.LastCommitInfo.Round),
+		BlockHash:               Hash2Hex(bk.ReqBeginBlock.RequestBeginBlock.Hash()),
+		BlockIdPartsHeaderTotal: "",
+		BlockIdPartsHeaderHash:  Hash2Hex(bk.ReqBeginBlock.RequestBeginBlock.Header.Hash()),
+
+		BlockHeaderVersionApp:         fmt.Sprintf("%d", bk.ReqBeginBlock.RequestBeginBlock.Header.Version.App),
+		BlockHeaderVersionBlock:       fmt.Sprintf("%d", bk.ReqBeginBlock.RequestBeginBlock.Header.Version.Block),
+		BlockHeaderChainId:            bk.ReqBeginBlock.RequestBeginBlock.Header.ChainID,
+		BlockHeaderHeight:             fmt.Sprintf("%d", bk.ReqBeginBlock.RequestBeginBlock.Header.Height),
+		BlockHeaderTime:               TimeFormat(bk.ReqBeginBlock.RequestBeginBlock.Header.Time),
+		BlockHeaderLastBlockIdHash:    Hash2Hex(bk.ReqBeginBlock.RequestBeginBlock.Header.LastBlockID.Hash),
+		BlockHeaderLastCommitHash:     Hash2Hex(bk.ReqBeginBlock.RequestBeginBlock.Header.LastCommitHash),
+		BlockHeaderDataHash:           Hash2Hex(bk.ReqBeginBlock.RequestBeginBlock.Header.DataHash),
+		BlockHeaderNextValidatorsHash: Hash2Hex(bk.ReqBeginBlock.RequestBeginBlock.Header.NextValidatorsHash),
+		BlockHeaderConsensusHash:      Hash2Hex(bk.ReqBeginBlock.RequestBeginBlock.Header.ConsensusHash),
+		BlockHeaderAppHash:            Hash2Hex(bk.ReqBeginBlock.RequestBeginBlock.Header.AppHash),
+		BlockHeaderLastResultsHash:    Hash2Hex(bk.ReqBeginBlock.RequestBeginBlock.Header.LastResultsHash),
+		BlockHeaderEvidenceHash:       Hash2Hex(bk.ReqBeginBlock.RequestBeginBlock.Header.EvidenceHash),
+		BlockHeaderProposerAddress:    Hash2Hex(bk.ReqBeginBlock.RequestBeginBlock.Header.ProposerAddress),
+		BlockHeaderProposer:           Hash2Hex(bk.ReqBeginBlock.RequestBeginBlock.Header.ProposerAddress),
+		BlockDataHash:                 Hash2Hex(bk.ReqBeginBlock.RequestBeginBlock.Header.DataHash),
+		BlockLastCommitRound:          fmt.Sprintf("%d", bk.ReqBeginBlock.RequestBeginBlock.LastCommit.Round),
+		BlockHeaderValidators:         Hash2Hex(bk.ReqBeginBlock.RequestBeginBlock.Header.ValidatorsHash),
 		Time:                          TimeFormat(bk.Time),
 	}
 
-	bz, _ := json.Marshal(bk.ByzantineValidators)
-	msg.BlockByzantineValidators = string(bz)
+	n := len(bk.RequestBeginBlock.LastCommit.Signatures)
+	for i := 0; i < n; i++ {
+		vote := bk.RequestBeginBlock.LastCommit.GetVote(i)
+		bz, _ := json.Marshal(vote)
+		msg.BlockLastCommitVotes = msg.BlockLastCommitVotes + string(bz) + ","
+	}
 
-	bz, _ = json.Marshal(bk.LastCommitInfo.Votes)
-	msg.BlockLastCommitVotes = string(bz)
-
-	bz, _ = json.Marshal(bk.LastCommitInfo)
+	bz, _ := json.Marshal(bk.RequestBeginBlock.LastCommit)
 	msg.BlockLastCommitInfo = string(bz)
+
+	bz, _ = json.Marshal(bk.ReqBeginBlock.RequestBeginBlock.Header.Version)
 
 	//get proposal
 	var tMap map[string]interface{}
@@ -112,9 +116,67 @@ func InsertBlockInfo(db *pg.DB, logger log.Logger, bk *blockInDB) error {
 		msg.BlockProposalTenderValidator = consensusPubkey.(string)
 	}
 
-	err = orm.Insert(db, &msg)
-	if err != nil {
-		EventErr(db, logger, NewErrMsg(err))
+	tx, _ := db.Begin()
+
+	{ //blockinfo
+		err = db.Insert(&msg)
+		if err != nil {
+			EventErr(db, logger, NewErrMsg(err))
+		}
+		logger.Debug("InsertBlockInfo", "blockinfo", msg)
 	}
+	{ //tx msg
+		if bk.Tx.TxHash != nil {
+			err, TxUid := InsertTxm(db, logger, txInDB{ReqTx: bk.Tx})
+			if err != nil {
+				EventErr(db, logger, NewErrMsg(err))
+			}
+
+			for _, m := range bk.Tx.Msgs {
+				iMsg := buildTxMsg(logger, m, txInDB{ReqTx: bk.Tx}, TxUid, "")
+				err := db.Insert(&iMsg)
+				if err != nil {
+					EventErr(db, logger, NewErrMsg(err))
+				}
+			}
+		}
+	}
+	{ //events
+		Events := makeEvent(bk.Events, logger)
+		for _, evt := range Events {
+			err = InsertEvent(db, logger, &evt)
+			if err != nil {
+				EventErr(db, logger, NewErrMsg(err))
+			}
+		}
+
+		if bk.Tx.RawLog.Code == 0 {
+			txEvents := makeEvent(bk.TxEvents, logger)
+			for _, evt := range txEvents {
+				err = InsertEvent(db, logger, &evt)
+				if err != nil {
+					EventErr(db, logger, NewErrMsg(err))
+				}
+			}
+		}
+
+		feeEvents := makeEvent(bk.FeeEvents, logger)
+		for _, evt := range feeEvents {
+			err = InsertEvent(db, logger, &evt)
+			if err != nil {
+				EventErr(db, logger, NewErrMsg(err))
+			}
+		}
+	}
+	{ //SyncStat
+		var stat *SyncState
+		if stat, err = UpdateChainSyncStat(db, logger, bk.ReqBeginBlock.RequestBeginBlock.Header.Height); err != nil {
+			logger.Error("UpdateChainSyncStat error", "err", err)
+		}
+		atomic.StoreInt64(&SyncBlockHeight, stat.BlockNum)
+	}
+
+	tx.Commit()
+
 	return err
 }

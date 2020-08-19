@@ -2,7 +2,6 @@ package types
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
 )
 
@@ -15,8 +14,8 @@ type Plugin interface {
 	Start(Context) error
 	Stop(Context) error
 
-	OnBlockBegin(ctx Context, req ReqBlock)
-	OnBlockEnd(ctx Context, req abci.RequestEndBlock)
+	OnBlockBegin(ctx Context, req ReqBeginBlock)
+	OnBlockEnd(ctx Context, req ReqEndBlock)
 
 	EvtHandler() PluginEvtHandler
 	MsgHandler() PluginMsgHandler

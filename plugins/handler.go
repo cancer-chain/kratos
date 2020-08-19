@@ -73,16 +73,16 @@ func (p *Plugins) onEvent(ctx types.Context, evt types.Event) {
 }
 
 func (p *Plugins) onBeginBlock(ctx types.Context, msg *types.MsgBeginBlock) {
-	ctx.Logger().Info("on begin block", "header", msg.Header)
+	ctx.Logger().Info("on begin block", "header", msg.RequestBeginBlock.Height)
 	for _, plugin := range p.plugins {
-		plugin.OnBlockBegin(ctx, msg.ReqBlock)
+		plugin.OnBlockBegin(ctx, msg.ReqBeginBlock)
 	}
 }
 
 func (p *Plugins) onEndBlock(ctx types.Context, msg *types.MsgEndBlock) {
-	ctx.Logger().Info("on end block", "height", msg.GetHeight(), "pnum", len(p.plugins))
+	ctx.Logger().Info("on end block", "height", msg.Height, "pnum", len(p.plugins))
 	for _, plugin := range p.plugins {
-		plugin.OnBlockEnd(ctx, msg.RequestEndBlock)
+		plugin.OnBlockEnd(ctx, msg.ReqEndBlock)
 	}
 }
 

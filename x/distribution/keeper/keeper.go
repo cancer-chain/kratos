@@ -133,7 +133,6 @@ func (k Keeper) WithdrawValidatorCommission(ctx sdk.Context, valAddr chainTypes.
 	}
 
 	commission, remainder := accumCommission.Commission.TruncateDecimal()
-
 	k.SetValidatorAccumulatedCommission(ctx, valAddr, types.ValidatorAccumulatedCommission{Commission: remainder}) // leave remainder to withdraw later
 
 	// update outstanding
@@ -147,6 +146,7 @@ func (k Keeper) WithdrawValidatorCommission(ctx sdk.Context, valAddr chainTypes.
 		if err != nil {
 			return nil, err
 		}
+		ctx.Logger().Debug("WithdrawValidatorCommission", "commission", commission)
 	}
 
 	ctx.EventManager().EmitEvent(

@@ -14,7 +14,7 @@ func createSchema(db *pg.DB, logger log.Logger) error {
 	}
 
 	models := []interface{}{
-		(*SyncState)(nil),
+		(*chaindb.SyncState)(nil),
 	}
 
 	for _, model := range models {

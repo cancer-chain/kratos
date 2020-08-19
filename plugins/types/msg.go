@@ -2,7 +2,6 @@ package types
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	abci "github.com/tendermint/tendermint/abci/types"
 )
 
 // MsgEvent event msg for plugin handler
@@ -31,24 +30,24 @@ func NewMsgStdTx(tx ReqTx) *MsgStdTx {
 
 // MsgBeginBlock begin block msg for plugin handler
 type MsgBeginBlock struct {
-	ReqBlock
+	ReqBeginBlock
 }
 
 // NewMsgBeginBlock create begin block msg for plugin handler
-func NewMsgBeginBlock(req ReqBlock) *MsgBeginBlock {
+func NewMsgBeginBlock(req ReqBeginBlock) *MsgBeginBlock {
 	return &MsgBeginBlock{
-		ReqBlock: req,
+		ReqBeginBlock: req,
 	}
 }
 
 // MsgEndBlock end block msg for plugin handler
 type MsgEndBlock struct {
-	abci.RequestEndBlock
+	ReqEndBlock
 }
 
 // NewMsgEndBlock create end block msg for plugin
-func NewMsgEndBlock(req abci.RequestEndBlock) *MsgEndBlock {
+func NewMsgEndBlock(req ReqEndBlock) *MsgEndBlock {
 	return &MsgEndBlock{
-		RequestEndBlock: req,
+		ReqEndBlock: req,
 	}
 }

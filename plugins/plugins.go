@@ -9,7 +9,6 @@ import (
 	"github.com/KuChainNetwork/kuchain/plugins/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	abci "github.com/tendermint/tendermint/abci/types"
 )
 
 // TODO: use a goroutine
@@ -88,7 +87,7 @@ func HandleTx(ctxSdk sdk.Context, tx types.ReqTx) {
 }
 
 // HandleBeginBlock emit begin block req to history plugin
-func HandleBeginBlock(ctx sdk.Context, req types.ReqBlock) {
+func HandleBeginBlock(ctx sdk.Context, req types.ReqBeginBlock) {
 
 	if plugins == nil {
 		return
@@ -98,7 +97,7 @@ func HandleBeginBlock(ctx sdk.Context, req types.ReqBlock) {
 }
 
 // HandleEndBlock emit end block req to history plugin
-func HandleEndBlock(ctx sdk.Context, req abci.RequestEndBlock) {
+func HandleEndBlock(ctx sdk.Context, req types.ReqEndBlock) {
 	if plugins == nil {
 		return
 	}

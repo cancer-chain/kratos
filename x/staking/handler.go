@@ -180,7 +180,6 @@ func handleMsgEditValidator(ctx sdk.Context, msg types.MsgEditValidator, k keepe
 
 	k.SetValidator(ctx, validator)
 
-
 	Evs := keeper.MakeValidatorEvent(ctx, types.EventTypeEditValidator, validator)
 	ctx.EventManager().EmitEvents(sdk.Events{
 		Evs,

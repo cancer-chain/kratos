@@ -10,11 +10,12 @@ import (
 	"time"
 
 	chaintype "github.com/KuChainNetwork/kuchain/chain/types"
-	types2 "github.com/KuChainNetwork/kuchain/x/plugin/types"
+	ptypes "github.com/KuChainNetwork/kuchain/x/plugin/types"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	rpcclient "github.com/tendermint/tendermint/rpc/client/local"
+	btypes "github.com/tendermint/tendermint/types"
 )
 
 type Attribute struct {
@@ -118,9 +119,6 @@ func RebuildTx(ctx sdk.Context, stdTx chaintype.StdTx, Cdc *codec.Codec,
 	return
 }
 
-type ReqTxHandle func(ctxSdk sdk.Context, tx ReqTx)
-type ReqEventsHandle func(ctxSdk sdk.Context, ev ReqEvents)
-
 func makeEventForTxm(aEvent abci.Event) sdk.Event {
 	return sdk.Event{
 		Type:       aEvent.Type,
@@ -154,7 +152,7 @@ func makeFeeEvent(stdTx chaintype.StdTx, height int64, time2 time.Time) (Event s
 	return
 }
 
-func PrintEventsLog(ctx sdk.Context, events sdk.Events, Height int64) {
+func PrintEventsLog(ctx sdk.Context, events sdk.Events, Height int64, desc string) {
 	logEvents := ""
 	for _, e := range events {
 		logEvents += e.Type + ","
@@ -163,25 +161,24 @@ func PrintEventsLog(ctx sdk.Context, events sdk.Events, Height int64) {
 		}
 		logEvents += ";"
 	}
-	ctx.Logger().Debug("getEvent",
-		"block_height", Height, "events", logEvents)
+	ctx.Logger().Debug("PrintEventsLog", "block_height", Height, "events", logEvents, "desc", desc)
 }
 
-func GetTxInfo(ctx sdk.Context, Height int64, Cdc *codec.Codec,
-	handleTx ReqTxHandle, handleEvn ReqEventsHandle) (t time.Time) {
-	if types2.PNode == nil {
-		ctx.Logger().Debug("GetTxInfo", "types2.PNode", types2.PNode)
+func GetBlockTxInfo(ctx sdk.Context, Height int64, Cdc *codec.Codec) (err error, block btypes.Block,
+	rtx ReqTx, rEvents ReqEvents, rTxEvents ReqEvents, rFeeEvents ReqEvents) {
+
+	if ptypes.PNode == nil {
+		ctx.Logger().Error("GetBlockTxInfo PNode is null ")
 		return
 	}
-	t = types2.PNode.BlockStore().LoadBlock(Height).Time
 
-	if Height <= 1 {
-		return
-	}
-	Height--
+	block = *ptypes.PNode.BlockStore().LoadBlock(Height)
+	var events sdk.Events
+	var txEvents sdk.Events
+	var feeEvents sdk.Events
 
-	getEvent := func() (events sdk.Events) {
-		ResTx, err := rpcclient.New(types2.PNode).BlockResults(&Height)
+	getEvent := func() () {
+		ResTx, err := rpcclient.New(ptypes.PNode).BlockResults(&Height)
 		if err != nil {
 			ctx.Logger().Error("getTx", "err", err)
 			return
@@ -189,13 +186,11 @@ func GetTxInfo(ctx sdk.Context, Height int64, Cdc *codec.Codec,
 		for i := 0; i < len(ResTx.BeginBlockEvents); i++ {
 			events = append(events, makeEventForTxm(ResTx.BeginBlockEvents[i]))
 		}
-		PrintEventsLog(ctx, events, Height)
-
 		return
 	}
 
 	getTx := func() (raws []json.RawMessage, codes []uint32) {
-		ResTx, err := rpcclient.New(types2.PNode).BlockResults(&Height)
+		ResTx, err := rpcclient.New(ptypes.PNode).BlockResults(&Height)
 		if err != nil {
 			ctx.Logger().Error("getTx", "err", err)
 			return
@@ -216,41 +211,62 @@ func GetTxInfo(ctx sdk.Context, Height int64, Cdc *codec.Codec,
 			bz, _ := json.Marshal(tr)
 			raws = append(raws, bz)
 			codes = append(codes, tr.Code)
+
+			for _, l := range tr.Log {
+				for _, e := range l.Events {
+					evt := sdk.Event{
+						Type: e.Type,
+					}
+
+					for _, n := range e.Attributes {
+						kv := kv.Pair{
+							Key:   []byte(n.Key),
+							Value: []byte(n.Value),
+						}
+						evt.Attributes = append(evt.Attributes, kv)
+					}
+					txEvents = append(txEvents, evt)
+				}
+			}
 		}
-		ctx.Logger().Debug("getTx",
-			"block_height", Height, "raws", raws)
+		ctx.Logger().Debug("getTx", "block_height", Height, "raws", raws)
 		return
 	}
 
-	getTxInfo := func() error {
+	getTxInfo := func() {
 		raws, _ := getTx()
-		var FeeEvents sdk.Events
-		block := types2.PNode.BlockStore().LoadBlock(Height)
+
 		for i := 0; i < len(block.Data.Txs); i++ {
 			var stdTx chaintype.StdTx
-			err := Cdc.UnmarshalBinaryLengthPrefixed(block.Data.Txs[i], &stdTx)
+			err = Cdc.UnmarshalBinaryLengthPrefixed(block.Data.Txs[i], &stdTx)
 			if err == nil {
-				handleTx(ctx, ReqTx{Txm: RebuildTx(ctx, stdTx, Cdc,
-					block.Height, block.Time, block.Data.Txs[i].Hash(), raws[i])})
+				rtx = ReqTx{Txm: RebuildTx(ctx, stdTx, Cdc, block.Height, block.Time, block.Data.Txs[i].Hash(), raws[i])}
 			} else {
-				ctx.Logger().Error("GetTxInfo", "err", err)
-				return err
+				ctx.Logger().Error("getTxInfo", "err", err)
 			}
-			FeeEvents = append(FeeEvents, makeFeeEvent(stdTx, block.Height, block.Time))
+			feeEvents = append(feeEvents, makeFeeEvent(stdTx, block.Height, block.Time))
 		}
 
-		handleEvn(ctx, ReqEvents{
-			BlockHeight: block.Height,
-			Events:      getEvent(),
-		})
+		getEvent()
 
-		PrintEventsLog(ctx, FeeEvents, Height)
-		handleEvn(ctx, ReqEvents{
+		rEvents = ReqEvents{
 			BlockHeight: block.Height,
-			Events:      FeeEvents,
-		})
+			Events:      events,
+		}
 
-		return nil
+		rTxEvents = ReqEvents{
+			BlockHeight: block.Height,
+			Events:      txEvents,
+		}
+
+		rFeeEvents = ReqEvents{
+			BlockHeight: block.Height,
+			Events:      feeEvents,
+		}
+
+		PrintEventsLog(ctx, events, Height, "Events")
+		PrintEventsLog(ctx, txEvents, Height, "txEvents")
+		PrintEventsLog(ctx, feeEvents, Height, "feeEvents")
 	}
 
 	getTxInfo()

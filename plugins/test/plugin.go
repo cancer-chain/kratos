@@ -5,7 +5,6 @@ import (
 	types2 "github.com/KuChainNetwork/kuchain/plugins/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
 )
 
@@ -32,8 +31,8 @@ func (t *testPlugin) Stop(ctx types.Context) error {
 	return nil
 }
 
-func (t *testPlugin) OnBlockBegin(ctx types.Context, req types2.ReqBlock)    {}
-func (t *testPlugin) OnBlockEnd(ctx types.Context, req abci.RequestEndBlock) {}
+func (t *testPlugin) OnBlockBegin(ctx types.Context, req types2.ReqBeginBlock)    {}
+func (t *testPlugin) OnBlockEnd(ctx types.Context, req types2.ReqEndBlock) {}
 
 func (t *testPlugin) OnEvent(ctx types.Context, evt types.Event) {
 	t.logger.Info("on event", "type", evt.Type)
@@ -47,7 +46,7 @@ func (t *testPlugin) OnMsg(ctx types.Context, msg sdk.Msg) {
 	t.logger.Info("on msg", "msg", msg)
 }
 
-func (t *testPlugin) OnBlock(ctx types.Context, msg types2.ReqBlock) {
+func (t *testPlugin) OnBlock(ctx types.Context, msg types2.ReqBeginBlock) {
 	t.logger.Info("on msg", "msg", msg)
 }
 

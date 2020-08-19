@@ -2,70 +2,18 @@ package dbHistory
 
 import (
 	"fmt"
-	types2 "github.com/KuChainNetwork/kuchain/plugins/types"
-
 	"github.com/KuChainNetwork/kuchain/plugins/db_history/types"
+	types2 "github.com/KuChainNetwork/kuchain/plugins/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/go-pg/pg/v10"
-	"github.com/pkg/errors"
-	abci "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/libs/log"
+
+	btypes "github.com/tendermint/tendermint/types"
 )
-
-const (
-	ChainIdx = 1
-)
-
-// SyncState sync state in pg database
-type SyncState struct {
-	tableName struct{} `pg:"sync_stat,alias:sync_stat"` // default values are the same
-
-	ID       int // both "Id" and "ID" are detected as primary key
-	BlockNum int64
-	ChainID  string `pg:",unique"`
-}
-
-func NewChainSyncStat(db *pg.DB, logger log.Logger) *SyncState {
-	stat := &SyncState{
-		ID: ChainIdx,
-	}
-	if err := db.Select(stat); err != nil {
-		if errors.Is(err, pg.ErrNoRows) {
-			// need init
-			if err := db.Insert(stat); err != nil {
-				panic(err)
-			}
-		} else {
-			panic(err)
-		}
-	}
-
-	return stat
-}
-
-func UpdateChainSyncStat(db *pg.DB, logger log.Logger, num int64, chainID string) error {
-	stat := &SyncState{
-		ID: ChainIdx,
-	}
-	err := db.Select(stat)
-	if err != nil {
-		return errors.Wrapf(err, "get sync stat err")
-	}
-
-	logger.Info("get sync stat", "num", stat.BlockNum)
-
-	return db.Update(&SyncState{
-		ID:       ChainIdx,
-		BlockNum: num,
-		ChainID:  chainID,
-	})
-}
 
 // dbMsgs4Block all msgs for a block, plugin will commit for all
 type dbMsgs4Block struct {
-	beginReq types2.ReqBlock
+	beginReq types2.ReqBeginBlock
 
-	endReq abci.RequestEndBlock
+	endReq types2.ReqEndBlock
 
 	skip   bool
 	events map[string]types.Event
@@ -75,9 +23,9 @@ type dbMsgs4Block struct {
 
 func NewDBMsgs4Block(startHeight int64) dbMsgs4Block {
 	return dbMsgs4Block{
-		beginReq: types2.ReqBlock{
-			RequestBeginBlock: abci.RequestBeginBlock{
-				Header: abci.Header{
+		beginReq: types2.ReqBeginBlock{
+			RequestBeginBlock: btypes.Block{
+				Header: btypes.Header {
 					Height: startHeight,
 				},
 			},
@@ -91,13 +39,13 @@ func NewDBMsgs4Block(startHeight int64) dbMsgs4Block {
 }
 
 func (d *dbMsgs4Block) BlockHeight() int64 {
-	return d.beginReq.Header.Height
+	return d.beginReq.RequestBeginBlock.Header.Height
 }
 
-func (d *dbMsgs4Block) Begin(ctx types.Context, req types2.ReqBlock) {
+func (d *dbMsgs4Block) Begin(ctx types.Context, req types2.ReqBeginBlock) {
 
 	height := d.BlockHeight()
-	reqHeight := req.Header.GetHeight()
+	reqHeight := req.RequestBeginBlock.Header.Height
 
 	ctx.Logger().Debug("msgs begin block", "req", reqHeight, "curr", height)
 
@@ -116,13 +64,13 @@ func (d *dbMsgs4Block) Begin(ctx types.Context, req types2.ReqBlock) {
 	}
 
 	if (height + 1) != reqHeight {
-		panic(fmt.Errorf("block height no match in begin %d %s", height, req.Header.LastBlockId.String()))
+		panic(fmt.Errorf("block height no match in begin %d %s", height, req.RequestBeginBlock.Header.LastBlockID.String()))
 	}
 
 	d.beginReq = req
 }
 
-func (d *dbMsgs4Block) End(ctx types.Context, req abci.RequestEndBlock) {
+func (d *dbMsgs4Block) End(ctx types.Context, req types2.ReqEndBlock) {
 	height := d.BlockHeight()
 
 	ctx.Logger().Debug("end for block", "height", height, "req", req.Height)

@@ -1,12 +1,13 @@
 package dbHistory
 
 import (
+	"github.com/KuChainNetwork/kuchain/plugins/types"
 	"sync"
+	"sync/atomic"
 
 	"github.com/KuChainNetwork/kuchain/plugins/db_history/chaindb"
 	"github.com/KuChainNetwork/kuchain/plugins/db_history/config"
 	"github.com/go-pg/pg/v10"
-	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
 )
 
@@ -19,7 +20,7 @@ func (w dbWork) IsStopped() bool {
 }
 
 func (w dbWork) IsEndBlock() (bool, int64) {
-	if msg, ok := w.msg.(abci.RequestEndBlock); ok {
+	if msg, ok := w.msg.(types.ReqEndBlock); ok {
 		return true, msg.Height
 	}
 
@@ -32,7 +33,7 @@ type dbService struct {
 	errDatabase *pg.DB
 
 	stat dbMsgs4Block
-	sync *SyncState
+	sync *chaindb.SyncState
 
 	dbChan chan dbWork
 	wg     sync.WaitGroup
@@ -67,7 +68,7 @@ func NewDB(cfg config.Cfg, logger log.Logger) *dbService {
 		panic(err)
 	}
 
-	res.sync = NewChainSyncStat(res.database, logger)
+	res.sync = chaindb.NewChainSyncStat(res.database, logger)
 	res.stat = NewDBMsgs4Block(res.sync.BlockNum)
 
 	return res
@@ -78,6 +79,12 @@ func (db *dbService) Start() error {
 
 	db.wg.Add(1)
 	go func() {
+		stat, err := chaindb.SelectSyncStat(db.database, db.logger)
+		if err == nil {
+			atomic.StoreInt64(&chaindb.SyncBlockHeight, stat.BlockNum)
+			db.logger.Debug("Start", "stat", stat)
+		}
+
 		defer db.wg.Done()
 
 		for {
@@ -92,10 +99,10 @@ func (db *dbService) Start() error {
 				return
 			}
 
-			if ok, height := work.IsEndBlock(); ok {
-				if err := UpdateChainSyncStat(db.database, db.logger, height, db.sync.ChainID); err != nil {
-					db.logger.Error("UpdateChainSyncStat error", "err", err)
-				}
+			if ok, _ := work.IsEndBlock(); ok {
+				//if stat, err = chaindb.UpdateChainSyncStat(db.database, db.logger, height, db.sync.ChainID); err != nil {
+				//	db.logger.Error("UpdateChainSyncStat error", "err", err)
+				//}
 				// no need process
 				continue
 			}

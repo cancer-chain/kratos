@@ -4,7 +4,6 @@ import (
 	"github.com/KuChainNetwork/kuchain/plugins/db_history/types"
 	types2 "github.com/KuChainNetwork/kuchain/plugins/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	abci "github.com/tendermint/tendermint/abci/types"
 )
 
 func (t *plugin) OnEvent(ctx types.Context, evt types.Event) {
@@ -23,11 +22,11 @@ func (t *plugin) OnMsg(ctx types.Context, msg sdk.Msg) {
 	t.db.stat.AppendMsg(msg)
 }
 
-func (t *plugin) OnBlockBegin(ctx types.Context, req types2.ReqBlock) {
+func (t *plugin) OnBlockBegin(ctx types.Context, req types2.ReqBeginBlock) {
 	t.db.stat.Begin(ctx, req)
 }
 
-func (t *plugin) OnBlockEnd(ctx types.Context, req abci.RequestEndBlock) {
+func (t *plugin) OnBlockEnd(ctx types.Context, req types2.ReqEndBlock) {
 	logger := ctx.Logger()
 
 	if t.db.stat.skip {

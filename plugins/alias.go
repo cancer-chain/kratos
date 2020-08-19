@@ -17,5 +17,5 @@ var (
 
 type (
 	StdTx    = chainTypes.StdTx
-	BlockMsg = types.ReqBlock
+	BlockMsg = types.ReqBeginBlock
 )

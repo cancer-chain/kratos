@@ -3,7 +3,9 @@ package chaindb
 import (
 	"encoding/base64"
 	"encoding/hex"
+	ptypes "github.com/KuChainNetwork/kuchain/plugins/types"
 	"github.com/go-pg/pg/v10"
+	"github.com/tendermint/tendermint/libs/log"
 	"time"
 )
 import "strings"
@@ -49,4 +51,24 @@ func Hash2Hex(hash []byte) string {
 
 func TimeFormat(t time.Time) string {
 	return t.Format("2006-01-02T15:04:05.999999999Z")
+}
+
+func makeEvent(rEvents ptypes.ReqEvents, logger log.Logger) (Events []ptypes.Event) {
+	for _, e := range rEvents.Events {
+		evt := ptypes.Event{
+			BlockHeight: rEvents.BlockHeight,
+			//HashCode:    strings.ToUpper(hex.EncodeToString(tm.TxHash)),
+			Type: e.Type,
+		}
+
+		evt.Attributes = make(map[string]string)
+		for _, kv := range e.Attributes {
+			evt.Attributes[string(kv.Key)] = string(kv.Value)
+		}
+		Events = append(Events, evt)
+	}
+
+	logger.Debug("makeEvent", "Events", Events)
+
+	return
 }

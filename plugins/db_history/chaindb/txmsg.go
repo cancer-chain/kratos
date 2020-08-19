@@ -2,8 +2,6 @@ package chaindb
 
 import (
 	"encoding/json"
-	"github.com/go-pg/pg/v10"
-	"github.com/go-pg/pg/v10/orm"
 	"github.com/tendermint/tendermint/libs/log"
 )
 
@@ -34,7 +32,7 @@ type CreateTxMsgsModel struct {
 	Time      string   `json:"time"`
 }
 
-func buildTxMsg(logger log.Logger, m json.RawMessage, tx *txInDB, uid int64, sender string) (iMsg CreateTxMsgsModel) {
+func buildTxMsg(logger log.Logger, m json.RawMessage, tx txInDB, uid int64, sender string) (iMsg CreateTxMsgsModel) {
 	var msg Msg
 	json.Unmarshal(m, &msg)
 
@@ -72,14 +70,3 @@ func buildTxMsg(logger log.Logger, m json.RawMessage, tx *txInDB, uid int64, sen
 	return
 }
 
-func InsertTxMsgs(db *pg.DB, logger log.Logger, tx *txInDB, tx_ *pg.Tx, uid int64) bool {
-
-	for _, m := range tx.Msgs {
-		iMsg := buildTxMsg(logger, m, tx, uid, "")
-		err := orm.Insert(db, &iMsg)
-		if err != nil {
-			EventErr(db, logger, NewErrMsg(err))
-		}
-	}
-	return true
-}
