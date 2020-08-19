@@ -63,8 +63,9 @@ func acExec(db *pg.DB, model CreateAccCoinsModel, logger log.Logger) error {
 		logger.Debug("acExec1", "model", model)
 		err = orm.Insert(db, &model)
 	} else {
+		logger.Debug("1 acExec2", "model", model, "m", m)
 		model.Amount, model.AmountFloat = CoinAdd(model.Amount, model.AmountFloat, m.Amount, m.AmountFloat)
-		logger.Debug("acExec2", "model", model)
+		logger.Debug("2 acExec2", "model")
 		_, err = orm.NewQuery(db, &model).Where(fmt.Sprintf("Symbol='%s' and account='%s'", model.Symbol, model.Account)).Update()
 	}
 	if err == nil {
