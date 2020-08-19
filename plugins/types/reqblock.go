@@ -8,9 +8,9 @@ import (
 
 type ReqBeginBlock struct {
 	RequestBeginBlock types.Block
-	Tx                ReqTx
+	Tx                []ReqTx
 	Events            ReqEvents
-	TxEvents          ReqEvents
+	TxEvents          []ReqEvents
 	FeeEvents         ReqEvents
 
 	ValidatorInfo string

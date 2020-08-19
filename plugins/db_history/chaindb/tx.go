@@ -116,3 +116,57 @@ func InsertTxm(db *pg.DB, logger log.Logger, tx txInDB) (error, int64) {
 	logger.Debug("InsertTxm", "txm", q)
 	return err, q.TxUid
 }
+
+func getEvent0(tm ptypes.ReqTx, logger log.Logger) (Events []ptypes.Event) {
+	for _, l := range tm.RawLog.Log {
+		for _, e := range l.Events {
+			evt := ptypes.Event{
+				BlockHeight: tm.Height,
+				HashCode:    strings.ToUpper(hex.EncodeToString(tm.TxHash)),
+				Type:        e.Type,
+			}
+
+			evt.Attributes = make(map[string]string)
+			for _, kv := range e.Attributes {
+				evt.Attributes[kv.Key] = kv.Value
+			}
+			Events = append(Events, evt)
+		}
+	}
+
+	logger.Debug("makeEvent",
+		"evts", Events, "raw", tm.RawLog, "RawCode", tm.RawLog.Code, "height", tm.Height)
+	return
+}
+
+func InsertTxm0(db *pg.DB, logger log.Logger, tx *txInDB) error {
+	Events := getEvent0(tx.ReqTx, logger)
+
+	tx_, _ := db.Begin()
+	q := makeTxmSql(tx.ReqTx)
+	err := orm.Insert(db, &q)
+	if err != nil {
+		EventErr(db, logger, NewErrMsg(err))
+	}
+
+	for _, m := range tx.Msgs {
+		iMsg := buildTxMsg(logger, m, *tx, 0, "")
+		err := orm.Insert(db, &iMsg)
+		if err != nil {
+			EventErr(db, logger, NewErrMsg(err))
+		}
+	}
+
+	if tx.RawLog.Code == 0 { //fee
+		for _, evt := range Events {
+			err = InsertEvent(db, logger, &evt)
+			if err != nil {
+				EventErr(db, logger, NewErrMsg(err))
+			}
+		}
+	}
+
+	tx_.Commit()
+
+	return nil
+}

@@ -29,7 +29,7 @@ func BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock, k staking.Keeper,
 	}
 
 	storageBlockHeight = chaindb.SyncBlockHeight
-	err, block, rtx, rEvents, rTxEvents, rFeeEvents := types.GetBlockTxInfo(ctx, storageBlockHeight+1, codec)
+	err, block, rTxs, rEvents, rTxEvents, rFeeEvents := types.GetBlockTxInfo(ctx, storageBlockHeight+1, codec)
 	if err == nil {
 		proposerValidator := getValidatorByConsAddr(ctx, ctx.BlockHeader().ProposerAddress, k)
 		bz, _ := json.Marshal(proposerValidator)
@@ -38,7 +38,7 @@ func BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock, k staking.Keeper,
 			ctx,
 			types.ReqBeginBlock{
 				RequestBeginBlock: block,
-				Tx:                rtx,
+				Tx:                rTxs,
 				Events:            rEvents,
 				TxEvents:          rTxEvents,
 				FeeEvents:         rFeeEvents,

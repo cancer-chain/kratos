@@ -15,7 +15,7 @@ func Process(db *pg.DB, logger log.Logger, msg interface{}) error {
 	case types.Event:
 		return InsertEvent(db, logger, &msg)
 	case types2.ReqTx:
-
+		return InsertTxm0(db, logger, newTxInDB(msg))
 	case types2.ReqBeginBlock:
 		return InsertBlockInfo(db, logger, newBlockInDB(msg))
 	}

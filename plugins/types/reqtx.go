@@ -165,7 +165,7 @@ func PrintEventsLog(ctx sdk.Context, events sdk.Events, Height int64, desc strin
 }
 
 func GetBlockTxInfo(ctx sdk.Context, Height int64, Cdc *codec.Codec) (err error, block btypes.Block,
-	rtx ReqTx, rEvents ReqEvents, rTxEvents ReqEvents, rFeeEvents ReqEvents) {
+	rTxs []ReqTx, rEvents ReqEvents, rTxEvents []ReqEvents, rFeeEvents ReqEvents) {
 
 	if ptypes.PNode == nil {
 		ctx.Logger().Error("GetBlockTxInfo PNode is null ")
@@ -228,6 +228,11 @@ func GetBlockTxInfo(ctx sdk.Context, Height int64, Cdc *codec.Codec) (err error,
 					txEvents = append(txEvents, evt)
 				}
 			}
+
+			rTxEvents = append(rTxEvents, ReqEvents{
+				BlockHeight: block.Height,
+				Events:      txEvents,
+			})
 		}
 		ctx.Logger().Debug("getTx", "block_height", Height, "raws", raws)
 		return
@@ -240,7 +245,8 @@ func GetBlockTxInfo(ctx sdk.Context, Height int64, Cdc *codec.Codec) (err error,
 			var stdTx chaintype.StdTx
 			err = Cdc.UnmarshalBinaryLengthPrefixed(block.Data.Txs[i], &stdTx)
 			if err == nil {
-				rtx = ReqTx{Txm: RebuildTx(ctx, stdTx, Cdc, block.Height, block.Time, block.Data.Txs[i].Hash(), raws[i])}
+				rtx := ReqTx{Txm: RebuildTx(ctx, stdTx, Cdc, block.Height, block.Time, block.Data.Txs[i].Hash(), raws[i])}
+				rTxs = append(rTxs, rtx)
 			} else {
 				ctx.Logger().Error("getTxInfo", "err", err)
 			}
@@ -254,18 +260,15 @@ func GetBlockTxInfo(ctx sdk.Context, Height int64, Cdc *codec.Codec) (err error,
 			Events:      events,
 		}
 
-		rTxEvents = ReqEvents{
-			BlockHeight: block.Height,
-			Events:      txEvents,
-		}
-
 		rFeeEvents = ReqEvents{
 			BlockHeight: block.Height,
 			Events:      feeEvents,
 		}
 
 		PrintEventsLog(ctx, events, Height, "Events")
-		PrintEventsLog(ctx, txEvents, Height, "txEvents")
+		for _, nEvent := range rTxEvents {
+			PrintEventsLog(ctx, nEvent.Events, Height, "txEvents")
+		}
 		PrintEventsLog(ctx, feeEvents, Height, "feeEvents")
 	}
 

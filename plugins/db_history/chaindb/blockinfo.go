@@ -126,14 +126,14 @@ func InsertBlockInfo(db *pg.DB, logger log.Logger, bk *blockInDB) error {
 		logger.Debug("InsertBlockInfo", "blockinfo", msg)
 	}
 	{ //tx msg
-		if bk.Tx.TxHash != nil {
-			err, TxUid := InsertTxm(db, logger, txInDB{ReqTx: bk.Tx})
+		for _, txInBk := range bk.Tx {
+			err, TxUid := InsertTxm(db, logger, txInDB{ReqTx: txInBk})
 			if err != nil {
 				EventErr(db, logger, NewErrMsg(err))
 			}
 
-			for _, m := range bk.Tx.Msgs {
-				iMsg := buildTxMsg(logger, m, txInDB{ReqTx: bk.Tx}, TxUid, "")
+			for _, m := range txInBk.Msgs {
+				iMsg := buildTxMsg(logger, m, txInDB{ReqTx: txInBk}, TxUid, "")
 				err := db.Insert(&iMsg)
 				if err != nil {
 					EventErr(db, logger, NewErrMsg(err))
@@ -150,12 +150,16 @@ func InsertBlockInfo(db *pg.DB, logger log.Logger, bk *blockInDB) error {
 			}
 		}
 
-		if bk.Tx.RawLog.Code == 0 {
-			txEvents := makeEvent(bk.TxEvents, logger)
-			for _, evt := range txEvents {
-				err = InsertEvent(db, logger, &evt)
-				if err != nil {
-					EventErr(db, logger, NewErrMsg(err))
+		for _, txInBk := range bk.Tx {
+			if txInBk.RawLog.Code == 0 {
+				for i := 0; i < len(bk.TxEvents); i++ {
+					txEvents := makeEvent(bk.TxEvents[i], logger)
+					for _, evt := range txEvents {
+						err = InsertEvent(db, logger, &evt)
+						if err != nil {
+							EventErr(db, logger, NewErrMsg(err))
+						}
+					}
 				}
 			}
 		}
