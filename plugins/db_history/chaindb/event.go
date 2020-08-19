@@ -37,6 +37,7 @@ func InsertEvent(db *pg.DB, logger log.Logger, evt *types.Event) error {
 	} else if evt.Type == "unbond" {
 		EventDelegationDel(db, logger, evt)
 		EventDelegationChange(db, logger, evt)
+		EventUnBondAdd(db, logger, evt)
 	} else if evt.Type == "complete_redelegation" {
 		EventAccCompleteReDelegateCoinsMove(db, logger, evt)
 		EventDelegationChange(db, logger, evt)
@@ -64,6 +65,10 @@ func InsertEvent(db *pg.DB, logger log.Logger, evt *types.Event) error {
 		EventValidatorSlash(db, logger, evt)
 	} else if evt.Type == "unjail" {
 		EventValidatorUnjail(db, logger, evt)
+	} else if evt.Type == "proposer_reward" {
+		EventProposerRewardAdd(db, logger, evt)
+	} else if evt.Type == "complete_unbonding" {
+		EventUnBondComplete(db, logger, evt)
 	}
 
 	return db.Insert(&eventInDB{
