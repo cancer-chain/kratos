@@ -76,7 +76,7 @@ func acExec(db *pg.DB, model CreateAccCoinsModel, logger log.Logger) error {
 }
 
 func EventAccCoinsAdd(db *pg.DB, logger log.Logger, evt *types.Event) {
-
+	tx, _ := db.Begin()
 	var AccMsg EventAccCoins
 	err := eventutil.UnmarshalKVMap(evt.Attributes, &AccMsg)
 	if err != nil {
@@ -89,7 +89,7 @@ func EventAccCoinsAdd(db *pg.DB, logger log.Logger, evt *types.Event) {
 		EventErr(db, logger, NewErrMsgString(fmt.Sprintf("height: %d,amount is null", AccMsg.Height)))
 		return
 	}
-	tx, _ := db.Begin()
+
 	err = acExec(db, MakeCoinSql(AccMsg), logger)
 	if err != nil {
 		EventErr(db, logger, NewErrMsg(err))
@@ -98,7 +98,7 @@ func EventAccCoinsAdd(db *pg.DB, logger log.Logger, evt *types.Event) {
 }
 
 func EventAccCoinsMintAdd(db *pg.DB, logger log.Logger, evt *types.Event) {
-
+	tx, _ := db.Begin()
 	var AccMsg EventAccCoins
 	err := eventutil.UnmarshalKVMap(evt.Attributes, &AccMsg)
 	if err != nil {
@@ -112,7 +112,7 @@ func EventAccCoinsMintAdd(db *pg.DB, logger log.Logger, evt *types.Event) {
 		EventErr(db, logger, NewErrMsgString(fmt.Sprintf("height: %d,amount is null， %s, %d ", AccMsg.Height, file, line)))
 		return
 	}
-	tx, _ := db.Begin()
+
 	err = acExec(db, MakeCoinSql(AccMsg), logger)
 	if err != nil {
 		EventErr(db, logger, NewErrMsg(err))
@@ -121,6 +121,7 @@ func EventAccCoinsMintAdd(db *pg.DB, logger log.Logger, evt *types.Event) {
 }
 
 func EventAccCoinsReduce(db *pg.DB, logger log.Logger, evt *types.Event) {
+	tx, _ := db.Begin()
 	var AccMsg EventAccCoins
 	err := eventutil.UnmarshalKVMap(evt.Attributes, &AccMsg)
 	if err != nil {
@@ -135,7 +136,6 @@ func EventAccCoinsReduce(db *pg.DB, logger log.Logger, evt *types.Event) {
 		return
 	}
 
-	tx, _ := db.Begin()
 	err = acExec(db, MakeCoinSql(AccMsg, -1), logger)
 	if err != nil {
 		EventErr(db, logger, NewErrMsg(err))
