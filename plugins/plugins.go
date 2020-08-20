@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	dbHistory "github.com/KuChainNetwork/kuchain/plugins/db_history"
+	"github.com/KuChainNetwork/kuchain/plugins/db_history/chaindb"
 	"github.com/KuChainNetwork/kuchain/plugins/test"
 	"github.com/KuChainNetwork/kuchain/plugins/types"
 
@@ -50,7 +51,7 @@ func HandleEvent(ctx sdk.Context, evts types.ReqEvents) {
 	}
 
 	for _, evt := range evts.Events {
-		if ctx.BlockHeight() <= 0 {
+		if ctx.BlockHeight() <= 0 && chaindb.SyncBlockHeight <= 0 {
 			bz, _ := json.Marshal(evt)
 
 			sh256 := sha256.New()

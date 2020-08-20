@@ -9,6 +9,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	abci "github.com/tendermint/tendermint/abci/types"
+	"sync/atomic"
 )
 
 // BeginBlocker check for infraction evidence or downtime of validators
@@ -19,21 +20,19 @@ func getValidatorByConsAddr(ctx sdk.Context, consAcc sdk.ConsAddress, k staking.
 	return validator
 }
 
-var storageBlockHeight = int64(-1)
-
 func BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock, k staking.Keeper, codec *codec.Codec) {
-	ctx.Logger().Debug("EndBlocker", "SyncBlockHeight:", chaindb.SyncBlockHeight)
-
-	if req.Header.Height < 2 {
+	if req.Header.Height < startHeight {
 		return
 	}
 
 	if storageBlockHeight < 0 {
-		storageBlockHeight = chaindb.SyncBlockHeight + 1
+		storageBlockHeight = atomic.LoadInt64(&chaindb.SyncBlockHeight) + 1
 	}
 
-	err, block, rTxs, rEvents, rTxEvents, rFeeEvents := types.GetBlockTxInfo(ctx, storageBlockHeight, codec)
-	if err == nil {
+	ctx.Logger().Debug("EndBlocker", "storageBlockHeight:", storageBlockHeight)
+
+	getStorageBlockSErr, block, rTxs, rEvents, rTxEvents, rFeeEvents := types.GetBlockTxInfo(ctx, storageBlockHeight, codec)
+	if getStorageBlockSErr == nil {
 		proposerValidator := getValidatorByConsAddr(ctx, ctx.BlockHeader().ProposerAddress, k)
 		bz, _ := json.Marshal(proposerValidator)
 
@@ -51,18 +50,22 @@ func BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock, k staking.Keeper,
 		)
 		ctx.Logger().Debug("BeginBlocker",
 			"proposerValidator:", proposerValidator, "proposer:", string(bz))
+
 	} else {
-		ctx.Logger().Error("BeginBlocker", "GetBlockTxInfo err:", err)
+		ctx.Logger().Error("BeginBlocker", "GetBlockTxInfo err:", getStorageBlockSErr)
 	}
 }
 
 func EndBlocker(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
-	if req.Height < 2 {
+	if req.Height < startHeight {
 		return []abci.ValidatorUpdate{}
 	}
 
 	plugins.HandleEndBlock(ctx, types.ReqEndBlock{Height: storageBlockHeight})
 
-	storageBlockHeight++
+	if getStorageBlockSErr == nil {
+		storageBlockHeight++
+	}
+
 	return []abci.ValidatorUpdate{}
 }

@@ -23,3 +23,9 @@ var (
 type (
 	GenesisState = types.GenesisState
 )
+
+const startHeight = int64(2)
+var (
+	storageBlockHeight  = int64(-1)
+	getStorageBlockSErr = error(nil)
+)

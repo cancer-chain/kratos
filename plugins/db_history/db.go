@@ -100,10 +100,6 @@ func (db *dbService) Start() error {
 			}
 
 			if ok, _ := work.IsEndBlock(); ok {
-				//if stat, err = chaindb.UpdateChainSyncStat(db.database, db.logger, height, db.sync.ChainID); err != nil {
-				//	db.logger.Error("UpdateChainSyncStat error", "err", err)
-				//}
-				// no need process
 				continue
 			}
 

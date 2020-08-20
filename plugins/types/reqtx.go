@@ -168,11 +168,17 @@ func GetBlockTxInfo(ctx sdk.Context, Height int64, Cdc *codec.Codec) (err error,
 	rTxs []ReqTx, rEvents ReqEvents, rTxEvents []ReqEvents, rFeeEvents ReqEvents) {
 
 	if ptypes.PNode == nil {
-		ctx.Logger().Error("GetBlockTxInfo PNode is null ")
+		err = sdkerrors.New("PNode is nil", 2, fmt.Sprintf("block height %d", Height))
 		return
 	}
 
-	block = *ptypes.PNode.BlockStore().LoadBlock(Height)
+	blockPtr := ptypes.PNode.BlockStore().LoadBlock(Height)
+	if blockPtr == nil {
+		err = sdkerrors.New("block is nil", 1, fmt.Sprintf("block height %d", Height))
+		return
+	}
+
+	block = *blockPtr
 	var events sdk.Events
 	var feeEvents sdk.Events
 
