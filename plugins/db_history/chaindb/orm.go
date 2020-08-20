@@ -24,6 +24,8 @@ func RegOrm(db *pg.DB, logger log.Logger) error {
 		(*CreateTxModel)(nil),
 		(*CreateTxMsgsModel)(nil),
 		(*ErrMsg)(nil),
+		(*EventProposerRewardModel)(nil),
+		(*EventUnBondModel)(nil),
 	}
 
 	for _, model := range models {
