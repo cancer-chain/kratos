@@ -19,7 +19,7 @@ func getValidatorByConsAddr(ctx sdk.Context, consAcc sdk.ConsAddress, k staking.
 	return validator
 }
 
-var storageBlockHeight int64
+var storageBlockHeight = int64(-1)
 
 func BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock, k staking.Keeper, codec *codec.Codec) {
 	ctx.Logger().Debug("EndBlocker", "SyncBlockHeight:", chaindb.SyncBlockHeight)
@@ -28,8 +28,11 @@ func BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock, k staking.Keeper,
 		return
 	}
 
-	storageBlockHeight = chaindb.SyncBlockHeight
-	err, block, rTxs, rEvents, rTxEvents, rFeeEvents := types.GetBlockTxInfo(ctx, storageBlockHeight+1, codec)
+	if storageBlockHeight < 0 {
+		storageBlockHeight = chaindb.SyncBlockHeight + 1
+	}
+
+	err, block, rTxs, rEvents, rTxEvents, rFeeEvents := types.GetBlockTxInfo(ctx, storageBlockHeight, codec)
 	if err == nil {
 		proposerValidator := getValidatorByConsAddr(ctx, ctx.BlockHeader().ProposerAddress, k)
 		bz, _ := json.Marshal(proposerValidator)
@@ -58,6 +61,8 @@ func EndBlocker(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdat
 		return []abci.ValidatorUpdate{}
 	}
 
-	plugins.HandleEndBlock(ctx, types.ReqEndBlock{Height: storageBlockHeight + 1})
+	plugins.HandleEndBlock(ctx, types.ReqEndBlock{Height: storageBlockHeight})
+
+	storageBlockHeight++
 	return []abci.ValidatorUpdate{}
 }

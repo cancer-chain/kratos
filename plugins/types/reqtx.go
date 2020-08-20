@@ -224,6 +224,7 @@ func GetBlockTxInfo(ctx sdk.Context, Height int64, Cdc *codec.Codec) (err error,
 							Value: []byte(n.Value),
 						}
 						evt.Attributes = append(evt.Attributes, kv)
+
 					}
 					txEvents = append(txEvents, evt)
 				}
