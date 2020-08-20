@@ -23,4 +23,6 @@ var (
 	ErrAssetCoinMustSupplyNeedGTInitSupply   = sdkerrors.Register(ModuleName, 18, "coin max_supply need > init_supply")
 	ErrAssetIssueToHeightMustGTCurrentHeight = sdkerrors.Register(ModuleName, 19, "coin issue to height must > current height")
 	ErrAssetSymbolError                      = sdkerrors.Register(ModuleName, 20, "asset symbol error")
+	ErrAssetCoinNoZero                       = sdkerrors.Register(ModuleName, 21, "amount should not be zero")
+	ErrAssetCoinCannotBeBurn                 = sdkerrors.Register(ModuleName, 22, "coin state not allowed burn")
 )

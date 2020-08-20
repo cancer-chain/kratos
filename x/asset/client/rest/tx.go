@@ -27,6 +27,7 @@ type CreateReq struct {
 	MaxSupply     string       `json:"max_supply" yaml:"max_supply"`
 	CanIssue      string       `json:"can_issue" yaml:"can_issue"`
 	CanLock       string       `json:"can_lock" yaml:"can_lock"`
+	CanBurn       string       `json:"can_burn" yaml:"can_burn"`
 	IssueToHeight string       `json:"issue_to_height" yaml:"issue_to_height"`
 	InitSupply    string       `json:"init_supply" yaml:"init_supply"`
 	Desc          string       `json:"desc" yaml:"desc"`
@@ -53,6 +54,12 @@ type LockReq struct {
 }
 
 type UnlockReq struct {
+	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
+	Account string       `json:"account" yaml:"account"`
+	Amount  string       `json:"amount" yaml:"amount"`
+}
+
+type ExerciseReq struct {
 	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
 	Account string       `json:"account" yaml:"account"`
 	Amount  string       `json:"amount" yaml:"amount"`
@@ -135,6 +142,7 @@ func CreateRequestHandlerFn(cliCtx context.CLIContext) http.HandlerFunc {
 
 		isCanIssue := req.CanIssue == "1"
 		isCanLock := req.CanLock == "1"
+		isCanBurn := req.CanBurn == "1"
 		issueToHeight, err := strconv.ParseInt(req.IssueToHeight, 10, 64)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
@@ -164,7 +172,7 @@ func CreateRequestHandlerFn(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
-		msg := types.NewMsgCreate(auth, creator, symbol, maxSupply, isCanIssue, isCanLock, issueToHeight, initSupply, []byte(req.Desc))
+		msg := types.NewMsgCreate(auth, creator, symbol, maxSupply, isCanIssue, isCanLock, isCanBurn, issueToHeight, initSupply, []byte(req.Desc))
 		txutil.WriteGenerateStdTxResponse(w, ctx, req.BaseReq, []sdk.Msg{msg})
 	}
 }
@@ -322,6 +330,39 @@ func UnlockRequestHandlerFn(cliCtx context.CLIContext) http.HandlerFunc {
 		}
 
 		msg := types.NewMsgUnlockCoin(auth, account, amount)
+		txutil.WriteGenerateStdTxResponse(w, ctx, req.BaseReq, []sdk.Msg{msg})
+	}
+}
+
+func ExerciseRequestHandlerFn(cliCtx context.CLIContext) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req ExerciseReq
+		if !rest.ReadRESTReq(w, r, cliCtx.Codec, &req) {
+			return
+		}
+
+		req.BaseReq = req.BaseReq.Sanitize()
+
+		account, err := types.NewAccountIDFromStr(req.Account)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, fmt.Sprintf("account parse error, %s", err.Error()))
+			return
+		}
+
+		amount, err := chainTypes.ParseCoin(req.Amount)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, fmt.Sprintf("amount parse error, %s", err.Error()))
+			return
+		}
+
+		ctx := txutil.NewKuCLICtx(cliCtx).WithFromAccount(account)
+		auth, err := txutil.QueryAccountAuth(ctx, account)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, fmt.Sprintf("query account auth error, %s", err.Error()))
+			return
+		}
+
+		msg := types.NewMsgExercise(auth, account, amount)
 		txutil.WriteGenerateStdTxResponse(w, ctx, req.BaseReq, []sdk.Msg{msg})
 	}
 }

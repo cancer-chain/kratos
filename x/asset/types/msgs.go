@@ -52,6 +52,7 @@ type MsgCreateCoinData struct {
 	MaxSupply     Coin   `json:"max_supply" yaml:"max_supply"`                     // MaxSupply coin max supply limit
 	CanIssue      bool   `json:"can_issue,omitempty" yaml:"can_issue"`             // CanIssue if the coin can issue after create
 	CanLock       bool   `json:"can_lock,omitempty" yaml:"can_lock"`               // CanLock if the coin can lock by user
+	CanBurn       bool   `json:"can_burn,omitempty" yaml:"can_burn"`               // CanBurn if the coin can burn by user
 	IssueToHeight int64  `json:"issue_to_height,omitempty" yaml:"issue_to_height"` // IssueToHeight if this is not zero, creator only can issue this
 	InitSupply    Coin   `json:"init_supply" yaml:"init_supply"`                   // InitSupply coin init supply, if issue_to_height is not zero, this will be the start supply for issue
 	Desc          []byte `json:"desc" yaml:"desc"`                                 // Description
@@ -64,7 +65,7 @@ func (msg MsgCreateCoinData) Sender() AccountID {
 }
 
 // NewMsgCreate new create coin msg
-func NewMsgCreate(auth types.AccAddress, creator types.Name, symbol types.Name, maxSupply types.Coin, canIssue, canLock bool, issue2Height int64, initSupply types.Coin, desc []byte) MsgCreateCoin {
+func NewMsgCreate(auth types.AccAddress, creator types.Name, symbol types.Name, maxSupply types.Coin, canIssue, canLock, canBurn bool, issue2Height int64, initSupply types.Coin, desc []byte) MsgCreateCoin {
 	return MsgCreateCoin{
 		*msg.MustNewKuMsg(
 			RouterKeyName,
@@ -75,6 +76,7 @@ func NewMsgCreate(auth types.AccAddress, creator types.Name, symbol types.Name, 
 				MaxSupply:     maxSupply,
 				CanIssue:      canIssue,
 				CanLock:       canLock,
+				CanBurn:       canBurn,
 				IssueToHeight: issue2Height,
 				InitSupply:    initSupply,
 				Desc:          desc,
@@ -391,6 +393,73 @@ func (msg MsgUnlockCoin) ValidateBasic() error {
 		if c.IsNegative() {
 			return ErrAssetCoinNoEnough
 		}
+	}
+
+	return nil
+}
+
+type MsgExerciseCoin struct {
+	types.KuMsg
+}
+
+type MsgExerciseCoinData struct {
+	Id     AccountID `json:"id" yaml:"id"`
+	Amount Coin      `json:"amount" yaml:"amount"`
+}
+
+// Type imp for data KuMsgData
+func (MsgExerciseCoinData) Type() types.Name { return types.MustName("exercise") }
+
+func (msg MsgExerciseCoinData) Sender() AccountID {
+	return msg.Id
+}
+
+// NewMsgBurn new issue msg
+func NewMsgExercise(auth types.AccAddress, id types.AccountID, amount types.Coin) MsgExerciseCoin {
+	return MsgExerciseCoin{
+		*msg.MustNewKuMsg(
+			RouterKeyName,
+			msg.WithAuth(auth),
+			msg.WithData(Cdc(), &MsgExerciseCoinData{
+				Id:     id,
+				Amount: amount,
+			}),
+		),
+	}
+}
+
+func (msg MsgExerciseCoin) GetData() (MsgExerciseCoinData, error) {
+	res := MsgExerciseCoinData{}
+	if err := msg.UnmarshalData(Cdc(), &res); err != nil {
+		return MsgExerciseCoinData{}, sdkerrors.Wrapf(types.ErrKuMsgDataUnmarshal, "%s", err.Error())
+	}
+	return res, nil
+}
+
+func (msg MsgExerciseCoin) ValidateBasic() error {
+	if err := msg.KuMsg.ValidateTransfer(); err != nil {
+		return err
+	}
+
+	data, err := msg.GetData()
+	if err != nil {
+		return err
+	}
+
+	if data.Id.Empty() {
+		return types.ErrKuMsgAccountIDNil
+	}
+
+	if err := types.ValidateDenom(data.Amount.Denom); err != nil {
+		return err
+	}
+
+	if data.Amount.IsNegative() {
+		return ErrAssetCoinNoEnough
+	}
+
+	if data.Amount.IsZero() {
+		return ErrAssetCoinNoZero
 	}
 
 	return nil

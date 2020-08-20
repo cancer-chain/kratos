@@ -12,6 +12,7 @@ const (
 	EventTypeLock     = "lock"
 	EventTypeUnlock   = "unlock"
 	EventTypePayFee   = "payfee"
+	EventTypeExercise = "exercise"
 )
 
 const (
