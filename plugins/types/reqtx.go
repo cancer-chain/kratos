@@ -159,7 +159,7 @@ func PrintEventsLog(ctx sdk.Context, events sdk.Events, Height int64, desc strin
 		for _, ar := range e.Attributes {
 			logEvents += " " + string(ar.Key) + ":" + string(ar.Value) + " "
 		}
-		logEvents += ";"
+		logEvents += ";" + "\n"
 	}
 	ctx.Logger().Debug("PrintEventsLog", "block_height", Height, "events", logEvents, "desc", desc)
 }
@@ -255,11 +255,7 @@ func GetBlockTxInfo(ctx sdk.Context, Height int64, Cdc *codec.Codec) (err error,
 		}
 
 		getEvent()
-
-		rEvents = ReqEvents{
-			BlockHeight: block.Height,
-			Events:      events,
-		}
+		
 
 		rFeeEvents = ReqEvents{
 			BlockHeight: block.Height,
