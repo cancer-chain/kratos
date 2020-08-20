@@ -150,16 +150,12 @@ func InsertBlockInfo(db *pg.DB, logger log.Logger, bk *blockInDB) error {
 			}
 		}
 
-		for _, txInBk := range bk.Tx {
-			if txInBk.RawLog.Code == 0 {
-				for i := 0; i < len(bk.TxEvents); i++ {
-					txEvents := makeEvent(bk.TxEvents[i], logger)
-					for _, evt := range txEvents {
-						err = InsertEvent(db, logger, &evt)
-						if err != nil {
-							EventErr(db, logger, NewErrMsg(err))
-						}
-					}
+		for i := 0; i < len(bk.TxEvents); i++ {
+			txEvents := makeEvent(bk.TxEvents[i], logger)
+			for _, evt := range txEvents {
+				err = InsertEvent(db, logger, &evt)
+				if err != nil {
+					EventErr(db, logger, NewErrMsg(err))
 				}
 			}
 		}

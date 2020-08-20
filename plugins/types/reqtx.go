@@ -229,12 +229,13 @@ func GetBlockTxInfo(ctx sdk.Context, Height int64, Cdc *codec.Codec) (err error,
 				}
 			}
 
-			ev := ReqEvents{
-				BlockHeight: block.Height,
-				Events:      txEvents,
+			if tr.Code == 0 {  // tx is suc
+				ev := ReqEvents{
+					BlockHeight: block.Height,
+					Events:      txEvents,
+				}
+				rTxEvents = append(rTxEvents, ev)
 			}
-
-			rTxEvents = append(rTxEvents, ev)
 		}
 
 		ctx.Logger().Debug("getTx", "block_height", Height, "raws", raws)
