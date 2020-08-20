@@ -174,7 +174,7 @@ func GetBlockTxInfo(ctx sdk.Context, Height int64, Cdc *codec.Codec) (err error,
 
 	block = *ptypes.PNode.BlockStore().LoadBlock(Height)
 	var events sdk.Events
-	var txEvents sdk.Events
+
 	var feeEvents sdk.Events
 
 	getEvent := func() () {
@@ -212,12 +212,12 @@ func GetBlockTxInfo(ctx sdk.Context, Height int64, Cdc *codec.Codec) (err error,
 			raws = append(raws, bz)
 			codes = append(codes, tr.Code)
 
+			var txEvents sdk.Events
 			for _, l := range tr.Log {
 				for _, e := range l.Events {
 					evt := sdk.Event{
 						Type: e.Type,
 					}
-
 					for _, n := range e.Attributes {
 						kv := kv.Pair{
 							Key:   []byte(n.Key),
@@ -229,12 +229,15 @@ func GetBlockTxInfo(ctx sdk.Context, Height int64, Cdc *codec.Codec) (err error,
 				}
 			}
 
-			rTxEvents = append(rTxEvents, ReqEvents{
+			ev := ReqEvents{
 				BlockHeight: block.Height,
 				Events:      txEvents,
-			})
+			}
+
+			rTxEvents = append(rTxEvents, ev)
 		}
-		ctx.Logger().Debug("getTx", "block_height", Height, "raws", raws, "rTxEvents", rTxEvents)
+
+		ctx.Logger().Debug("getTx", "block_height", Height, "raws", raws)
 		return
 	}
 
