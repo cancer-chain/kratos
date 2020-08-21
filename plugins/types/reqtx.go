@@ -256,10 +256,10 @@ func GetBlockTxInfo(ctx sdk.Context, Height int64, Cdc *codec.Codec) (err error,
 			if err == nil {
 				rtx := ReqTx{Txm: RebuildTx(ctx, stdTx, Cdc, block.Height, block.Time, block.Data.Txs[i].Hash(), raws[i])}
 				rTxs = append(rTxs, rtx)
+				feeEvents = append(feeEvents, makeFeeEvent(stdTx, block.Height, block.Time))
 			} else {
 				ctx.Logger().Error("getTxInfo", "err", err)
 			}
-			feeEvents = append(feeEvents, makeFeeEvent(stdTx, block.Height, block.Time))
 		}
 
 		getEvent()
