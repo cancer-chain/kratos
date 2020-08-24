@@ -2,12 +2,14 @@ package chaindb
 
 import (
 	"fmt"
+	"runtime"
+	"sync"
+
 	"github.com/KuChainNetwork/kuchain/plugins/db_history/types"
 	"github.com/KuChainNetwork/kuchain/utils/eventutil"
 	"github.com/go-pg/pg/v10"
 	"github.com/go-pg/pg/v10/orm"
 	"github.com/tendermint/tendermint/libs/log"
-	"runtime"
 )
 
 type EventAccCoins struct {
@@ -31,10 +33,15 @@ type CreateAccCoinsModel struct {
 	AmountFloat int64  `pg:"default:0" json:"amount_float"`
 	Symbol      string `pg:"unique:asy" json:"symbol"`
 	Account     string `pg:"unique:asy" json:"account"`
+	SyncState   int    `pg:"sync_state,notnull,default:0" json:"sync_state"`
 	Time        string `json:"time"`
 }
 
 const minCoinSymbol = len("0s\t")
+
+var (
+	startOnce sync.Once
+)
 
 func MakeCoinSql(msg EventAccCoins, n ...int32) CreateAccCoinsModel {
 	coin, _ := NewCoin(msg.Amount)

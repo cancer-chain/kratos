@@ -1,12 +1,12 @@
 package dbHistory
 
 import (
-	"github.com/KuChainNetwork/kuchain/plugins/types"
 	"sync"
 	"sync/atomic"
 
 	"github.com/KuChainNetwork/kuchain/plugins/db_history/chaindb"
 	"github.com/KuChainNetwork/kuchain/plugins/db_history/config"
+	"github.com/KuChainNetwork/kuchain/plugins/types"
 	"github.com/go-pg/pg/v10"
 	"github.com/tendermint/tendermint/libs/log"
 )
@@ -64,7 +64,7 @@ func NewDB(cfg config.Cfg, logger log.Logger) *dbService {
 		dbChan: make(chan dbWork, 512),
 	}
 
-	if err := createSchema(res.database, res.logger); err != nil {
+	if err := createSchema(res.database, res.logger, cfg.AccCoinsSync); err != nil {
 		panic(err)
 	}
 

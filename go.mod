@@ -22,6 +22,7 @@ require (
 	github.com/tendermint/go-amino v0.15.1
 	github.com/tendermint/tendermint v0.33.6
 	github.com/tendermint/tm-db v0.5.1
+	github.com/valyala/fasthttp v1.16.0
 	go.uber.org/zap v1.13.0
 	gopkg.in/yaml.v2 v2.2.8
 )

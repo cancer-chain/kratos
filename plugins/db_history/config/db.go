@@ -9,5 +9,6 @@ type DBCfg struct {
 }
 
 type Cfg struct {
-	DB DBCfg `json:"db"`
+	DB           DBCfg `json:"db"`
+	AccCoinsSync bool  `json:"acc_coins_sync"`
 }
