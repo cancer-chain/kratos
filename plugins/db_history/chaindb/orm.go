@@ -3,6 +3,7 @@ package chaindb
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"sync"
 	"time"
 
@@ -110,8 +111,26 @@ func startSync(db *pg.DB, syncStatus bool) {
 								err, coins := assetSyncTool.Sync(m.Account, m.Symbol, 1*time.Second)
 								if nil == err {
 									if nil != coins && 0 < len(coins) {
-										m.Amount = coins[0].Amount.QuoRaw(1000000000000000000).Int64()
-										m.AmountFloat = coins[0].Amount.ModRaw(1000000000000000000).Int64()
+										amount := coins[0]
+										m.Amount = 0
+										m.AmountFloat = 0
+										if len(amount) < 18 {
+											m.AmountFloat, err = strconv.ParseInt(amount, 10, 64)
+											if nil != err {
+												panic(err)
+											}
+										} else {
+											m.Amount, err = strconv.ParseInt(amount[0:len(amount)-18], 10, 64)
+											if nil != err {
+												panic(err)
+											}
+											m.AmountFloat, err = strconv.ParseInt(amount[len(amount)-18:], 10, 64)
+											if nil != err {
+												panic(err)
+											}
+										}
+										//m.Amount = coins[0].Amount.QuoRaw(1000000000000000000).Int64()
+										//m.AmountFloat = coins[0].Amount.ModRaw(1000000000000000000).Int64()
 									}
 									m.SyncState = 2
 									if _, err = orm.NewQuery(db, m).

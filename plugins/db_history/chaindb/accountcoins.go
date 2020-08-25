@@ -79,6 +79,10 @@ func acExec(db *pg.DB, model CreateAccCoinsModel, logger log.Logger) error {
 		_, err = orm.NewQuery(db, &model).
 			Where(fmt.Sprintf("Symbol='%s' and account='%s'", model.Symbol, model.Account)).
 			Set(fmt.Sprintf("amount=%d, amount_float=%d", model.Amount, model.AmountFloat)).Update()
+
+		_, err = orm.NewQuery(db, &model).
+			Where(fmt.Sprintf("Symbol='%s' and account='%s'", model.Symbol, model.Account)).
+			Set("sync_state = ?", 0).Update()
 	}
 	return err
 }
@@ -102,7 +106,7 @@ func EventAccCoinsAdd(db *pg.DB, logger log.Logger, evt *types.Event) {
 	if err != nil {
 		EventErr(db, logger, NewErrMsg(err))
 	}
-	tx.Commit()
+	_ = tx.Commit()
 }
 
 func EventAccCoinsMintAdd(db *pg.DB, logger log.Logger, evt *types.Event) {

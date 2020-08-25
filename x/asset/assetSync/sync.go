@@ -3,10 +3,8 @@ package assetSync
 import (
 	"encoding/json"
 	"fmt"
-	"strconv"
 	"time"
 
-	chainTypes "github.com/KuChainNetwork/kuchain/chain/types"
 	"github.com/valyala/fasthttp"
 )
 
@@ -18,7 +16,7 @@ type AssetSync struct {
 
 // Sync sync user coins
 func (object *AssetSync) Sync(user, denom string,
-	timeout time.Duration) (err error, coins chainTypes.Coins) {
+	timeout time.Duration) (err error, coins []string) {
 	req := fasthttp.AcquireRequest()
 	res := fasthttp.AcquireResponse()
 	defer func() {
@@ -44,15 +42,10 @@ func (object *AssetSync) Sync(user, denom string,
 		return
 	}
 	for _, result := range response.Result {
-		var amount int64
-		amount, err = strconv.ParseInt(result.Amount, 10, 64)
-		if nil != err {
-			return
-		}
 		if denom != result.Denom {
 			continue
 		}
-		coins = append(coins, chainTypes.NewInt64Coin(result.Denom, amount))
+		coins = append(coins, result.Amount)
 	}
 	return
 }
