@@ -14,20 +14,6 @@ import (
 type txInDB struct {
 	ptypes.ReqTx
 }
-type CreateTxModel struct {
-	tableName struct{} `pg:"tx,alias:tx"` // default values are the same
-
-	TxUid      int64  `json:"tx_uid"`
-	Height     int64  `json:"height"`
-	TxHash     string `json:"tx_hash"`
-	Msgs       string `json:"msg"`
-	Fee        string `json:"fee"`
-	Signatures string `json:"signatures"`
-	Memo       string `json:"memo"`
-	RawLog     string `json:"raw_log"`
-	Senders    string `json:"senders"`
-	Time       string `json:"time"`
-}
 
 func newTxInDB(tx ptypes.ReqTx) *txInDB {
 	return &txInDB{
@@ -38,6 +24,21 @@ func newTxInDB(tx ptypes.ReqTx) *txInDB {
 type Signature struct {
 	PubKey    string `json:"pub_key"`
 	Signature string `json:"signature"`
+}
+
+type CreateTxModel struct {
+	tableName struct{} `pg:"tx,alias:tx"` // default values are the same
+
+	TxUid      int64           `json:"tx_uid"`
+	Height     int64           `json:"height"`
+	TxHash     string          `json:"tx_hash"`
+	Msgs       string          `json:"msg"`
+	Fee        string          `json:"fee"`
+	Signatures string          `json:"signatures"`
+	Memo       string          `json:"memo"`
+	RawLog     json.RawMessage `json:"raw_log"`
+	Senders    string          `json:"senders"`
+	Time       string          `json:"time"`
 }
 
 func makeTxmSql(tm ptypes.ReqTx) CreateTxModel {
@@ -80,11 +81,7 @@ func makeTxmSql(tm ptypes.ReqTx) CreateTxModel {
 		Sins = "{}"
 	}
 
-	bz, _ = json.Marshal(tm.RawLog)
-	rawLog := string(bz)
-	if len(rawLog) <= 0 {
-		rawLog = "{}"
-	}
+	RawBz, _ := json.Marshal(tm.RawLog)
 
 	bz, _ = json.Marshal(tm.Senders)
 	Sender := string(bz)
@@ -100,7 +97,7 @@ func makeTxmSql(tm ptypes.ReqTx) CreateTxModel {
 		Fee:        Fee,
 		Signatures: Sins,
 		Memo:       tm.Memo,
-		RawLog:     rawLog,
+		RawLog:     RawBz,
 		Senders:    Sender,
 		Time:       tm.Time,
 	}
