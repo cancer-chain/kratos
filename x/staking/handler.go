@@ -301,6 +301,7 @@ func handleMsgBeginRedelegate(ctx sdk.Context, msg types.MsgBeginRedelegate, k k
 	ctx.EventManager().EmitEvents(sdk.Events{
 		chainTypes.NewEvent(ctx,
 			types.EventTypeRedelegate,
+			sdk.NewAttribute(types.AttributeKeyDelegator, msg.DelegatorAccount.String()),
 			sdk.NewAttribute(types.AttributeKeySrcValidator, msg.ValidatorSrcAccount.String()),
 			sdk.NewAttribute(types.AttributeKeyDstValidator, msg.ValidatorDstAccount.String()),
 			sdk.NewAttribute(sdk.AttributeKeyAmount, msg.Amount.String()),

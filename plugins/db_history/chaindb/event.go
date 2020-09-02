@@ -69,6 +69,8 @@ func InsertEvent(db *pg.DB, logger log.Logger, evt *types.Event) error {
 		EventProposerRewardAdd(db, logger, evt)
 	} else if evt.Type == "complete_unbonding" {
 		EventUnBondComplete(db, logger, evt)
+	} else if evt.Type == "redelegate" {
+		EventReDelegate(db, logger, evt)
 	}
 
 	return db.Insert(&eventInDB{

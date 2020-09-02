@@ -8,8 +8,8 @@ import (
 )
 
 // createSchema creates database schema for User and Story models.
-func createSchema(db *pg.DB, logger log.Logger) error {
-	if err := chaindb.RegOrm(db, logger); err != nil {
+func createSchema(db *pg.DB, logger log.Logger, syncStatus bool) error {
+	if err := chaindb.RegOrm(db, logger, syncStatus); err != nil {
 		return err
 	}
 

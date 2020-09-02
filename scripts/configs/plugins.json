@@ -1,16 +1,16 @@
 {
-    "plugins": [
-
-        {
-            "name": "db-history",
-            "cfg": {
-                "db": {
-                    "address": "192.168.1.200:5432",
-                    "user": "pguser",
-                    "password": "123456",
-                    "database": "kuchaindb"
-                }
-            }
-        }
-    ]
+  "plugins": [
+    {
+      "name": "db-history",
+      "cfg": {
+        "db": {
+          "address": "192.168.1.200:5432",
+          "user": "pguser",
+          "password": "123456",
+          "database": "kuchaindb"
+        },
+        "acc_coins_sync": true
+      }
+    }
+  ]
 }

@@ -2,12 +2,14 @@ package chaindb
 
 import (
 	"fmt"
+	"runtime"
+	"sync"
+
 	"github.com/KuChainNetwork/kuchain/plugins/db_history/types"
 	"github.com/KuChainNetwork/kuchain/utils/eventutil"
 	"github.com/go-pg/pg/v10"
 	"github.com/go-pg/pg/v10/orm"
 	"github.com/tendermint/tendermint/libs/log"
-	"runtime"
 )
 
 type EventAccCoins struct {
@@ -31,10 +33,15 @@ type CreateAccCoinsModel struct {
 	AmountFloat int64  `pg:"default:0" json:"amount_float"`
 	Symbol      string `pg:"unique:asy" json:"symbol"`
 	Account     string `pg:"unique:asy" json:"account"`
+	SyncState   int    `pg:"sync_state,notnull,default:0" json:"sync_state"`
 	Time        string `json:"time"`
 }
 
 const minCoinSymbol = len("0s\t")
+
+var (
+	startOnce sync.Once
+)
 
 func MakeCoinSql(msg EventAccCoins, n ...int32) CreateAccCoinsModel {
 	coin, _ := NewCoin(msg.Amount)
@@ -72,6 +79,10 @@ func acExec(db *pg.DB, model CreateAccCoinsModel, logger log.Logger) error {
 		_, err = orm.NewQuery(db, &model).
 			Where(fmt.Sprintf("Symbol='%s' and account='%s'", model.Symbol, model.Account)).
 			Set(fmt.Sprintf("amount=%d, amount_float=%d", model.Amount, model.AmountFloat)).Update()
+
+		_, err = orm.NewQuery(db, &model).
+			Where(fmt.Sprintf("Symbol='%s' and account='%s'", model.Symbol, model.Account)).
+			Set("sync_state = ?", 0).Update()
 	}
 	return err
 }
@@ -95,7 +106,7 @@ func EventAccCoinsAdd(db *pg.DB, logger log.Logger, evt *types.Event) {
 	if err != nil {
 		EventErr(db, logger, NewErrMsg(err))
 	}
-	tx.Commit()
+	_ = tx.Commit()
 }
 
 func EventAccCoinsMintAdd(db *pg.DB, logger log.Logger, evt *types.Event) {
