@@ -6,6 +6,7 @@ const (
 	EventTypeCompleteRedelegation = "complete_redelegation"
 	EventTypeCreateValidator      = "create_validator"
 	EventTypeEditValidator        = "edit_validator"
+	EventTypeEndValidator         = "end_validator"
 	EventTypeDelegate             = "delegate"
 	EventTypeUnbond               = "unbond"
 	EventTypeRedelegate           = "redelegate"
@@ -18,4 +19,15 @@ const (
 	AttributeKeyDelegator         = "delegator"
 	AttributeKeyCompletionTime    = "completion_time"
 	AttributeValueCategory        = ModuleName
+
+	AttributeKeyHeight          = "height"
+	AttributeKeyAddress         = "Address"
+	AttributeKeyConsensusPubkey = "ConsensusPubkey"
+	AttributeKeyJailed          = "Jailed"
+	AttributeKeyStatus          = "Status"
+	AttributeKeyTokens          = "Tokens"
+	AttributeKeyDelegatorShares = "DelegatorShares"
+	AttributeKeyDescription     = "Description"
+	AttributeKeyUnbondingHeight = "UnbondingHeight"
+	AttributeKeyUnbondingTime   = "UnbondingTime"
 )

@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/KuChainNetwork/kuchain/x/plugin/types"
 	"io"
 	"os"
 	"path/filepath"
@@ -242,6 +243,8 @@ func startInProcess(ctx *server.Context, appCreator server.AppCreator) (*node.No
 	if err != nil {
 		return nil, err
 	}
+
+	types.PNode = tmNode
 
 	if err := tmNode.Start(); err != nil {
 		return nil, err

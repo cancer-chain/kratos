@@ -1,13 +1,12 @@
 package chaindb
 
 import (
-	"reflect"
-
-	chainTypes "github.com/KuChainNetwork/kuchain/chain/types"
 	"github.com/KuChainNetwork/kuchain/plugins/test/types"
+	types2 "github.com/KuChainNetwork/kuchain/plugins/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/go-pg/pg/v10"
 	"github.com/tendermint/tendermint/libs/log"
+	"reflect"
 )
 
 func Process(db *pg.DB, logger log.Logger, msg interface{}) error {
@@ -15,8 +14,10 @@ func Process(db *pg.DB, logger log.Logger, msg interface{}) error {
 	switch msg := msg.(type) {
 	case types.Event:
 		return InsertEvent(db, logger, &msg)
-	case chainTypes.StdTx:
-		return insert(db, newTxInDB(msg))
+	case types2.ReqTx:
+		return InsertTxm0(db, logger, newTxInDB(msg))
+	case types2.ReqBeginBlock:
+		return InsertBlockInfo(db, logger, newBlockInDB(msg))
 	}
 
 	if msg, ok := msg.(sdk.Msg); ok {

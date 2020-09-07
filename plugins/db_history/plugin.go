@@ -3,10 +3,12 @@ package dbHistory
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/KuChainNetwork/kuchain/plugins/db_history/chaindb"
+	types2 "github.com/KuChainNetwork/kuchain/plugins/types"
 
-	chainTypes "github.com/KuChainNetwork/kuchain/chain/types"
 	"github.com/KuChainNetwork/kuchain/plugins/db_history/config"
 	"github.com/KuChainNetwork/kuchain/plugins/db_history/types"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/tendermint/tendermint/libs/log"
 )
@@ -22,6 +24,11 @@ type plugin struct {
 func (t *plugin) Init(ctx types.Context) error {
 	t.logger.Info("plugin init", "name", types.PluginName)
 	t.db = NewDB(t.cfg, ctx.Logger().With("module", "his-database"))
+
+	if chaindb.ErrDatabase == nil {
+		chaindb.ErrDatabase = t.db.errDatabase
+	}
+
 	return nil
 }
 
@@ -52,7 +59,7 @@ func (t *plugin) MsgHandler() types.PluginMsgHandler {
 }
 
 func (t *plugin) TxHandler() types.PluginTxHandler {
-	return func(ctx types.Context, tx chainTypes.StdTx) {
+	return func(ctx types.Context, tx types2.ReqTx) {
 		t.OnTx(ctx, tx)
 	}
 }

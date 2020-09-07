@@ -1,7 +1,9 @@
 package dbHistory
 
 import (
+	"github.com/KuChainNetwork/kuchain/plugins/types"
 	"sync"
+	"sync/atomic"
 
 	"github.com/KuChainNetwork/kuchain/plugins/db_history/chaindb"
 	"github.com/KuChainNetwork/kuchain/plugins/db_history/config"
@@ -17,26 +19,59 @@ func (w dbWork) IsStopped() bool {
 	return w.msg == nil
 }
 
+func (w dbWork) IsEndBlock() (bool, int64) {
+	if msg, ok := w.msg.(types.ReqEndBlock); ok {
+		return true, msg.Height
+	}
+
+	return false, 0
+}
+
 type dbService struct {
-	logger   log.Logger
-	database *pg.DB
+	logger      log.Logger
+	database    *pg.DB
+	errDatabase *pg.DB
+
+	stat dbMsgs4Block
+	sync *chaindb.SyncState
 
 	dbChan chan dbWork
 	wg     sync.WaitGroup
 }
 
+func (dbs *dbService) GetBD() *pg.DB {
+	return dbs.database
+}
+
 // NewDB create a connection commit event to db
 func NewDB(cfg config.Cfg, logger log.Logger) *dbService {
-	return &dbService{
+	res := &dbService{
 		database: pg.Connect(&pg.Options{
 			Addr:     cfg.DB.Address,
 			User:     cfg.DB.User,
 			Password: cfg.DB.Password,
 			Database: cfg.DB.Database,
 		}),
+
+		errDatabase: pg.Connect(&pg.Options{
+			Addr:     cfg.DB.Address,
+			User:     cfg.DB.User,
+			Password: cfg.DB.Password,
+			Database: cfg.DB.Database,
+		}),
+
 		logger: logger,
 		dbChan: make(chan dbWork, 512),
 	}
+
+	if err := createSchema(res.database, res.logger); err != nil {
+		panic(err)
+	}
+
+	res.sync = chaindb.NewChainSyncStat(res.database, logger)
+	res.stat = NewDBMsgs4Block(res.sync.BlockNum)
+
+	return res
 }
 
 func (db *dbService) Start() error {
@@ -44,11 +79,13 @@ func (db *dbService) Start() error {
 
 	db.wg.Add(1)
 	go func() {
-		defer db.wg.Done()
-
-		if err := createSchema(db.database); err != nil {
-			panic(err)
+		stat, err := chaindb.SelectSyncStat(db.database, db.logger)
+		if err == nil {
+			atomic.StoreInt64(&chaindb.SyncBlockHeight, stat.BlockNum)
+			db.logger.Debug("Start", "stat", stat)
 		}
+
+		defer db.wg.Done()
 
 		for {
 			work, ok := <-db.dbChan
@@ -60,6 +97,10 @@ func (db *dbService) Start() error {
 			if work.IsStopped() {
 				db.logger.Info("db service stopped")
 				return
+			}
+
+			if ok, _ := work.IsEndBlock(); ok {
+				continue
 			}
 
 			if err := db.Process(&work); err != nil {

@@ -1,8 +1,8 @@
 package keeper_test
 
 import (
-	"testing"
 	"github.com/stretchr/testify/require"
+	"testing"
 
 	"github.com/KuChainNetwork/kuchain/test/simapp"
 	"github.com/KuChainNetwork/kuchain/x/staking/types"

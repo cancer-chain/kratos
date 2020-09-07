@@ -77,7 +77,7 @@ func (k Keeper) SetWithdrawAddr(ctx sdk.Context, delegatorId chainTypes.AccountI
 	}
 
 	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(
+		chainTypes.NewEvent(ctx,
 			types.EventTypeSetWithdrawAddress,
 			sdk.NewAttribute(types.AttributeKeyWithdrawAddress, withdrawId.String()),
 		),
@@ -111,10 +111,11 @@ func (k Keeper) WithdrawDelegationRewards(ctx sdk.Context, delAddr chainTypes.Ac
 	ctx.Logger().Debug("WithdrawDelegationRewards", "rewards:", rewards)
 
 	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(
+		chainTypes.NewEvent(ctx,
 			types.EventTypeWithdrawRewards,
 			sdk.NewAttribute(sdk.AttributeKeyAmount, rewards.String()),
 			sdk.NewAttribute(types.AttributeKeyValidator, valAddr.String()),
+			sdk.NewAttribute(types.AttributeKeyDelegator, delAddr.String()),
 		),
 	)
 
@@ -132,7 +133,6 @@ func (k Keeper) WithdrawValidatorCommission(ctx sdk.Context, valAddr chainTypes.
 	}
 
 	commission, remainder := accumCommission.Commission.TruncateDecimal()
-
 	k.SetValidatorAccumulatedCommission(ctx, valAddr, types.ValidatorAccumulatedCommission{Commission: remainder}) // leave remainder to withdraw later
 
 	// update outstanding
@@ -146,12 +146,14 @@ func (k Keeper) WithdrawValidatorCommission(ctx sdk.Context, valAddr chainTypes.
 		if err != nil {
 			return nil, err
 		}
+		ctx.Logger().Debug("WithdrawValidatorCommission", "commission", commission)
 	}
 
 	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(
+		chainTypes.NewEvent(ctx,
 			types.EventTypeWithdrawCommission,
 			sdk.NewAttribute(sdk.AttributeKeyAmount, commission.String()),
+			sdk.NewAttribute(types.AttributeKeyValidator, valAddr.String()),
 		),
 	)
 
@@ -174,6 +176,7 @@ func (k Keeper) GetTotalRewards(ctx sdk.Context) (totalRewards chainTypes.DecCoi
 // The amount is first added to the distribution module account and then directly
 // added to the pool. An error is returned if the amount cannot be sent to the
 // module account.
+
 func (k Keeper) FundCommunityPool(ctx sdk.Context, amount Coins, sender chainTypes.AccountID) error {
 	ctx.Logger().Debug("FundCommunityPool", "amount", amount, "sender", sender)
 
@@ -221,8 +224,7 @@ func (k Keeper) CanDistribution(ctx sdk.Context) (bool, time.Time) {
 		return false, k.startNotDistriTimePoint
 	} else {
 		k.SetStartNotDistributionTimePoint(ctx, time.Time{})
-		ctx.Logger().Info("time CanDistribution",
-			"time", k.startNotDistriTimePoint.Nanosecond())
+		ctx.Logger().Info("time CanDistribution", "time", k.startNotDistriTimePoint.Nanosecond())
 	}
 
 	return true, k.startNotDistriTimePoint

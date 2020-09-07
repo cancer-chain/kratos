@@ -2,6 +2,8 @@ package plugin
 
 import (
 	"encoding/json"
+	"github.com/KuChainNetwork/kuchain/x/plugin/keeper"
+	"github.com/KuChainNetwork/kuchain/x/slashing/external"
 	"math/rand"
 
 	"github.com/KuChainNetwork/kuchain/chain/genesis"
@@ -63,12 +65,18 @@ func (AppModuleBasic) GetQueryCmd(cdc *codec.Codec) *cobra.Command {
 // AppModule implements an application module for the asset module.
 type AppModule struct {
 	AppModuleBasic
+	stakingKeeper external.StakingKeeper
+	pCdc          *codec.Codec
 }
 
 // NewAppModule creates a new AppModule object
-func NewAppModule() AppModule {
+func NewAppModule(sk external.StakingKeeper, cdc *codec.Codec) AppModule {
+	keeper.PCdec = cdc
+
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
+		stakingKeeper:  sk,
+		pCdc:           cdc,
 	}
 }
 
@@ -107,12 +115,12 @@ func (am AppModule) ExportGenesis(ctx sdk.Context) json.RawMessage {
 }
 
 // BeginBlock returns the begin blocker for the asset module.
-func (AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
-	BeginBlocker(ctx, req)
+func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
+	BeginBlocker(ctx, req, am.stakingKeeper, am.pCdc)
 }
 
 // EndBlock returns the end blocker for the asset module. It returns no validator updates.
-func (AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
+func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
 	return EndBlocker(ctx, req)
 }
 

@@ -2,10 +2,15 @@ package asset
 
 import (
 	"encoding/json"
-
 	"github.com/KuChainNetwork/kuchain/chain/types"
+	chainTypes "github.com/KuChainNetwork/kuchain/chain/types"
+	"github.com/KuChainNetwork/kuchain/plugins"
+	types2 "github.com/KuChainNetwork/kuchain/plugins/types"
+	assettypes "github.com/KuChainNetwork/kuchain/x/asset/types"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"strconv"
 )
 
 // InitGenesis account genesis init
@@ -26,6 +31,24 @@ func InitGenesis(ctx sdk.Context, ak Keeper, bz json.RawMessage) {
 		if err != nil {
 			panic(err)
 		}
+
+		ctx.EventManager().EmitEvent(
+			chainTypes.NewEvent(ctx,
+				assettypes.EventTypeCreate,
+				sdk.NewAttribute(sdk.AttributeKeyModule, assettypes.AttributeValueCategory),
+				sdk.NewAttribute(assettypes.AttributeKeyCreator, a.GetCreator().String()),
+				sdk.NewAttribute(assettypes.AttributeKeySymbol, a.GetSymbol().String()),
+				sdk.NewAttribute(assettypes.AttributeKeySupply, initSupply.String()),
+				sdk.NewAttribute(assettypes.AttributeKeyMaxSupply, a.GetMaxSupply().String()),
+				sdk.NewAttribute(assettypes.AttributeKeyCanIssue, strconv.FormatBool(true)),
+				sdk.NewAttribute(assettypes.AttributeKeyCanLock, strconv.FormatBool(true)),
+				sdk.NewAttribute(assettypes.AttributeKeyIssueCreateHeight, strconv.Itoa(1)),
+				sdk.NewAttribute(assettypes.AttributeKeyIssueToHeight, strconv.Itoa(0)),
+				sdk.NewAttribute(assettypes.AttributeKeyInit, initSupply.String()),
+				sdk.NewAttribute(assettypes.AttributeKeyDescription, a.GetDescription()),
+				sdk.NewAttribute(assettypes.AttributeKeyHeight, strconv.FormatInt(ctx.BlockHeight(), 10)),
+			),
+		)
 	}
 
 	for _, a := range data.GenesisAssets {
@@ -34,7 +57,36 @@ func InitGenesis(ctx sdk.Context, ak Keeper, bz json.RawMessage) {
 		if err != nil {
 			panic(err)
 		}
+
+		for _, coin := range a.GetCoins() {
+			creator, symbol, err := types.CoinAccountsFromDenom(coin.Denom)
+			if err != nil {
+				panic(err)
+			}
+
+			ctx.EventManager().EmitEvent(
+				chainTypes.NewEvent(ctx,
+					assettypes.EventTypeIssue,
+					sdk.NewAttribute(sdk.AttributeKeyModule, assettypes.AttributeValueCategory),
+					sdk.NewAttribute(assettypes.AttributeKeyCreator, creator.String()),
+					sdk.NewAttribute(assettypes.AttributeKeySymbol, symbol.String()),
+					sdk.NewAttribute(assettypes.AttributeKeyAmount, coin.String()),
+				),
+			)
+
+			ctx.EventManager().EmitEvent(
+				chainTypes.NewEvent(ctx,
+					assettypes.EventTypeTransfer,
+					sdk.NewAttribute(sdk.AttributeKeyModule, chainTypes.KuCodeSpace),
+					sdk.NewAttribute(assettypes.AttributeKeyFrom, creator.String()),
+					sdk.NewAttribute(assettypes.AttributeKeyTo, a.GetID().String()),
+					sdk.NewAttribute(assettypes.AttributeKeyAmount, coin.String()),
+				),
+			)
+		}
 	}
+
+	plugins.HandleEvent(ctx, types2.ReqEvents{BlockHeight: ctx.BlockHeight(), Events: ctx.EventManager().Events()})
 }
 
 // ExportGenesis returns a GenesisState for a given context and keeper

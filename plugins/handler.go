@@ -60,21 +60,29 @@ func (p *Plugins) RegPlugin(ctx Context, plugin Plugin) {
 	}
 }
 
-func (p *Plugins) onTx(ctx types.Context, tx StdTx) {
+func (p *Plugins) onTx(ctx types.Context, tx types.ReqTx) {
 	for _, h := range p.txHandlers {
 		h(ctx, tx)
-	}
-
-	for _, h := range p.msgHandlers {
-		for _, msg := range tx.Msgs {
-			h(ctx, msg)
-		}
 	}
 }
 
 func (p *Plugins) onEvent(ctx types.Context, evt types.Event) {
 	for _, h := range p.evtHandlers {
 		h(ctx, evt)
+	}
+}
+
+func (p *Plugins) onBeginBlock(ctx types.Context, msg *types.MsgBeginBlock) {
+	ctx.Logger().Info("on begin block", "header", msg.RequestBeginBlock.Height)
+	for _, plugin := range p.plugins {
+		plugin.OnBlockBegin(ctx, msg.ReqBeginBlock)
+	}
+}
+
+func (p *Plugins) onEndBlock(ctx types.Context, msg *types.MsgEndBlock) {
+	ctx.Logger().Info("on end block", "height", msg.Height, "pnum", len(p.plugins))
+	for _, plugin := range p.plugins {
+		plugin.OnBlockEnd(ctx, msg.ReqEndBlock)
 	}
 }
 
@@ -109,17 +117,25 @@ func (p *Plugins) Start() {
 				p.onEvent(ctx, msg.Evt)
 			case *types.MsgStdTx:
 				p.onTx(ctx, msg.Tx)
+			case *types.MsgBeginBlock:
+				p.onBeginBlock(ctx, msg)
+			case *types.MsgEndBlock:
+				p.onEndBlock(ctx, msg)
 			}
 		}
 	}()
 }
 
-func (p *Plugins) EmitEvent(evt sdk.Event) {
-	p.msgChan <- types.NewMsgEvent(evt)
+func (p *Plugins) EmitEvent(evt sdk.Event, height int64, hashCode string) {
+	p.msgChan <- types.NewMsgEvent(evt, height, hashCode)
 }
 
-func (p *Plugins) EmitTx(tx StdTx) {
+func (p *Plugins) EmitTx(tx types.ReqTx) {
 	p.msgChan <- types.NewMsgStdTx(tx)
+}
+
+func (p *Plugins) EmitPluginMsg(msg interface{}) {
+	p.msgChan <- msg
 }
 
 func (p *Plugins) Stop(ctx types.Context) {

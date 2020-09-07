@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"fmt"
+	chainTypes "github.com/KuChainNetwork/kuchain/chain/types"
 
 	"github.com/KuChainNetwork/kuchain/x/gov/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -30,7 +31,7 @@ func (keeper Keeper) AddVote(ctx sdk.Context, proposalID uint64, voterAddr Accou
 	keeper.SetVote(ctx, vote)
 
 	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(
+		chainTypes.NewEvent(ctx,
 			types.EventTypeProposalVote,
 			sdk.NewAttribute(types.AttributeKeyOption, option.String()),
 			sdk.NewAttribute(types.AttributeKeyProposalID, fmt.Sprintf("%d", proposalID)),

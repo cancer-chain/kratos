@@ -543,6 +543,10 @@ func (k Keeper) Delegate(
 	// Call the after-modification hook
 	k.AfterDelegationModified(ctx, delegation.DelegatorAccount, delegation.ValidatorAccount)
 
+	ctx.EventManager().EmitEvents(sdk.Events{
+		MakeValidatorEvent(ctx, types.EventTypeEditValidator, validator),
+	})
+
 	return newShares, nil
 }
 

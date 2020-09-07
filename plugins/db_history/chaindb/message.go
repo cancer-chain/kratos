@@ -52,6 +52,9 @@ func processMsg(db *pg.DB, msg sdk.Msg) error {
 			in.Amount = amount.Amount.BigInt().Int64()
 			in.Symbol = amount.Denom
 			if err := db.Insert(in); err != nil {
+				if err != nil {
+					EventErr(db, nil, NewErrMsg(err))
+				}
 				return err
 			}
 		}

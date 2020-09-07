@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"fmt"
+	chainTypes "github.com/KuChainNetwork/kuchain/chain/types"
 
 	"github.com/KuChainNetwork/kuchain/x/slashing/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -50,7 +51,7 @@ func (k Keeper) HandleValidatorSignature(ctx sdk.Context, addr crypto.Address, p
 
 	if missed {
 		ctx.EventManager().EmitEvent(
-			sdk.NewEvent(
+			chainTypes.NewEvent(ctx,
 				types.EventTypeLiveness,
 				sdk.NewAttribute(types.AttributeKeyAddress, consAddr.String()),
 				sdk.NewAttribute(types.AttributeKeyMissedBlocks, fmt.Sprintf("%d", signInfo.MissedBlocksCounter)),
@@ -82,7 +83,7 @@ func (k Keeper) HandleValidatorSignature(ctx sdk.Context, addr crypto.Address, p
 			distributionHeight := height - sdk.ValidatorUpdateDelay - 1
 
 			ctx.EventManager().EmitEvent(
-				sdk.NewEvent(
+				chainTypes.NewEvent(ctx,
 					types.EventTypeSlash,
 					sdk.NewAttribute(types.AttributeKeyAddress, consAddr.String()),
 					sdk.NewAttribute(types.AttributeKeyPower, fmt.Sprintf("%d", power)),

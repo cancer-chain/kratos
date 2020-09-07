@@ -60,3 +60,25 @@ var (
 		sdk.NewAttribute("b2", "false"),
 	)
 )
+
+type EventValidator1 struct {
+	tableName struct{} `pg:"Validator,alias:Validator"` // default values are the same
+
+	ID int // both "Id" and "ID" are detected as primary key
+
+	Height  int64  `pg:"default:0" json:"height"`
+	Address string `pg:"unique:as" json:"address"`
+	Sender  string `pg:"unique:as" json:"sender"`
+}
+
+var (
+	H    int64 = 11239
+	Addr       = "abcde"
+	Send       = "cdasd"
+
+	VEvent = sdk.NewEvent("test1",
+		sdk.NewAttribute("height", "11239"),
+		sdk.NewAttribute("address", "abcde"),
+		sdk.NewAttribute("sender", "cdasd"),
+	)
+)

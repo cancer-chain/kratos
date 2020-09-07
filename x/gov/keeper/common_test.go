@@ -106,7 +106,7 @@ func NewTestApp(wallet *simapp.Wallet) (addAlice, addJack, addValidator sdk.AccA
 	if !succ {
 		resInt = sdk.NewInt(10000000000000000)
 	}
-	otherCoinDenom := types.CoinDenom(types.MustName("foo"),types.MustName("coin"))
+	otherCoinDenom := types.CoinDenom(types.MustName("foo"), types.MustName("coin"))
 	initAsset := types.NewCoin(constants.DefaultBondDenom, resInt)
 	asset1 := types.Coins{
 		types.NewInt64Coin(otherCoinDenom, 67),

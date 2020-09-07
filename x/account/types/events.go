@@ -9,4 +9,8 @@ const (
 	AttributeKeyCreator = "creator"
 	AttributeKeyAccount = "account"
 	AttributeKeyAuth    = "auth"
+	AttributeKeyHeight  = "height"
+	AttributeKeyDesc    = "desc"
+
+	AttributeValueCreator = "kuchain"
 )
