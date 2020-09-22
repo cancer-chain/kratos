@@ -1,8 +1,8 @@
 package keys
 
 var (
-	ChainNameStr      = "sys"
-	ChainMainNameStr  = "kuchain"
+	ChainNameStr      = "kts"
+	ChainMainNameStr  = "kratos"
 	DefaultBondSymbol = ChainNameStr
 	DefaultBondDenom  = ChainMainNameStr + "/" + DefaultBondSymbol
 )
